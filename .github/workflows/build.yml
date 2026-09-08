@@ -56,7 +56,7 @@ jobs:
           TAG="v${VERSION}"
           COMMIT="${GITHUB_SHA:0:7}"
 
-          shopt -s nullglobt
+          shopt -s nullglob
           files=(dist/*.dmg dist/*.zip)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No .dmg or .zip files found in dist/"
