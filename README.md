@@ -13,6 +13,8 @@
   <a href="https://github.com/devnonla/nonla-desk/blob/main/LICENSE"><img src="https://img.shields.io/github/license/devnonla/nonla-desk?style=flat-square" alt="License"></a>
 </p>
 
+> **Unofficial pre-release.** This is not a stable product yet. MCP tools, mini apps, and the desktop UI may change without notice.
+
 ---
 
 ## ✨ Features
@@ -41,6 +43,18 @@ curl -fsSL https://raw.githubusercontent.com/devnonla/nonla-desk/main/scripts/in
    ```
 
 > **Note:** The app is not code-signed. macOS Gatekeeper will block it on first launch unless you remove the quarantine attribute with the command above.
+
+## First launch
+
+Mini apps (tools) are **not** written inside Nonla Desk. An AI editor creates them over MCP. While the desktop has no mini apps, a card stays on screen: **Connect MCP to write tools**. After at least one app exists, the card goes away. Delete every app and it comes back.
+
+1. Open **Nonla Desk**. The local MCP server starts automatically (`http://127.0.0.1:24816/mcp`).
+2. Open Settings from the card (or the Settings icon) and copy the JSON snippet for your editor (Cursor, Claude Code, or Antigravity).
+3. Paste it into that editor's MCP config. Reload the editor.
+4. Keep Nonla Desk running while the editor is connected. If the app is quit, the MCP tools disappear.
+5. In the editor, ask the agent to create a mini app. It uses tools such as `create_miniapp`, `edit_miniapp_file`, and `check_miniapp`.
+
+Until MCP is connected, there is no way for the agent to write tools into the desktop.
 
 ## 🚀 Development
 
@@ -116,6 +130,18 @@ nonla-desk/
 | `bun run check`        | Lint + format (auto-fix)         |
 
 ## 📋 Changelog
+
+### v0.2.1 — 2026-09-08
+
+**Added**
+
+- MCP connect card on the empty desktop, with steps to connect Cursor, Claude Code, or Antigravity
+- First-launch docs and an unofficial pre-release notice in the README
+- Installer script on GitHub so the README curl one-liner works
+
+**Changed**
+
+- Sample Quick Note app is no longer seeded on first launch; the connect card stays until a mini app exists
 
 ### v0.1.0 — 2026-09-08
 
