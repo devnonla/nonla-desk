@@ -160,7 +160,8 @@ export default function Settings() {
         </h1>
 
         <p className="text-base font-normal leading-6.5 text-(--color-body) max-w-120 m-0">
-          Connect other AI harnesses to this app over MCP.
+          Connect Cursor, Claude Code, or Antigravity over MCP so the agent can write mini apps.
+          Nonla Desk must stay running while the editor is connected.
         </p>
       </div>
 

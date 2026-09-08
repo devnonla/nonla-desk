@@ -5,6 +5,7 @@ import meadowWallpaper from '@/assets/desktop-meadow.jpg'
 import { AppIcon } from '../desktop/AppIcon'
 import { DesktopCommandPalette } from '../desktop/DesktopCommandPalette'
 import { DesktopIcon, DesktopSystemIcon } from '../desktop/DesktopIcon'
+import { McpOnboarding } from '../desktop/McpOnboarding'
 import type { AppItem } from '../desktop/types'
 import { confirm } from '../ui/ConfirmDialog'
 import { toast } from '../ui/Toast'
@@ -41,6 +42,14 @@ export default function Dashboard() {
   useEffect(() => {
     if (location.pathname) loadApps()
   }, [loadApps, location.pathname])
+
+  useEffect(() => {
+    if (loading || apps.length > 0) return
+    const id = window.setInterval(() => {
+      void loadApps()
+    }, 1500)
+    return () => window.clearInterval(id)
+  }, [apps.length, loading, loadApps])
 
   const activeMiniId = location.pathname.startsWith('/mini/')
     ? location.pathname.replace('/mini/', '')
@@ -260,6 +269,10 @@ export default function Dashboard() {
         onImportApp={() => fileInputRef.current?.click()}
         onOpenSettings={() => navigate('/settings')}
       />
+
+      {!loading && apps.length === 0 && location.pathname === '/' && (
+        <McpOnboarding onConnect={() => navigate('/settings')} />
+      )}
     </div>
   )
 }
