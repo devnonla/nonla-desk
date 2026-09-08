@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# electron-vite / Vite
+out/
+.vite/
+
+# electron-builder
+dist/
+release/
+*.dmg
+*.blockmap
+*.app/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Local databases
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Editor / local tools
+.idea/
+.agents/
+.cursor/
+.codegraph/
+
+# Project-specific
+resources/sample-miniapps/
+scripts/

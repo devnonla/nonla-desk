@@ -1,0 +1,120 @@
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Mini apps are eval'd at runtime — scan the allowlist so gap/padding/tokens exist. */
+@source "../lib/miniapp-tailwind-safelist.ts";
+
+/* ========================================
+   Nonla Desk — Voltagent Design System
+   Meadow desktop, cream interiors, PostHog-like light OS
+   ======================================== */
+
+@layer base {
+  :root {
+    /* — Brand & Accent — */
+    --color-primary: #eb9d29;
+    --color-primary-soft: #f0b454;
+    --color-primary-deep: #c47f14;
+    --color-primary-glow: rgba(235, 157, 41, 0.18);
+    --color-on-primary: #101010;
+
+    /* — Surface — */
+    --color-canvas: #eeefe9;
+    --color-canvas-soft: #ffffff;
+    --color-hairline: #d4d5ce;
+    --color-hairline-soft: #a8a9a2;
+
+    /* — Text — */
+    --color-ink: #1d1d1d;
+    --color-ink-strong: #111111;
+    --color-body: #5c5e58;
+    --color-mute: #8b8d86;
+    --color-canvas-text-soft: #3d3d3a;
+
+    /* — Semantic — */
+    --color-success: #eb9d29;
+    --color-warning: #c47d12;
+    --color-error: #c0392b;
+
+    /* — Layout — */
+    --header-height: 38px;
+    --color-titlebar: #e5e6e0;
+
+    /* — Radius (Voltagent: sm=6 md=8 pill=9999) — */
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-pill: 9999px;
+
+    /* — Typography — */
+    --font-mono: "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono",
+      "JetBrains Mono", monospace;
+    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+
+    color-scheme: light;
+
+    /* — Legacy aliases (keep components working) — */
+    --color-bg-primary: var(--color-canvas);
+    --color-bg-secondary: var(--color-canvas);
+    --color-bg-tertiary: var(--color-canvas-soft);
+    --color-bg-elevated: var(--color-canvas-soft);
+    --color-bg-hover: rgba(29, 29, 29, 0.05);
+    --color-border: var(--color-hairline);
+    --color-border-hover: #b8b9b1;
+    --color-text-primary: var(--color-ink);
+    --color-text-secondary: var(--color-body);
+    --color-text-muted: var(--color-mute);
+    --color-accent: var(--color-primary);
+    --color-accent-hover: var(--color-primary-soft);
+    --color-accent-glow: var(--color-primary-glow);
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font-sans);
+    font-feature-settings:
+      "calt" 1,
+      "rlig" 1;
+    background: var(--color-titlebar);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-hairline);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-hover);
+  }
+
+  /* Selection */
+  ::selection {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+}

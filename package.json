@@ -1,0 +1,97 @@
+{
+  "name": "nonla-desk",
+  "version": "0.1.0",
+  "description": "Developer utilities desktop app for macOS",
+  "main": "./out/main/index.js",
+  "author": "devnonla",
+  "homepage": "https://github.com/devnonla/nonla-desk",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/devnonla/nonla-desk.git"
+  },
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "start": "electron-vite preview",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check --write .",
+    "postinstall": "electron-builder install-app-deps",
+    "build:unpack": "bun run build && electron-builder --dir",
+    "build:mac": "bun run build && electron-builder --mac",
+    "local": "bash scripts/local.sh"
+  },
+  "dependencies": {
+    "@electron-toolkit/utils": "^4.0.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@monaco-editor/react": "^4.7.0",
+    "@phosphor-icons/react": "^2.1.10",
+    "adm-zip": "^0.5.17",
+    "antd": "^6.6.2",
+    "aos": "^2.3.4",
+    "better-sqlite3": "^12.10.0",
+    "drizzle-orm": "^0.45.2",
+    "lucide-react": "^1.17.0",
+    "monaco-editor": "^0.55.1",
+    "motion": "12",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.17.0",
+    "sucrase": "^3.35.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.0.0",
+    "@tailwindcss/language-server": "^0.16.0",
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/adm-zip": "^0.5.8",
+    "@types/aos": "^3.0.8",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.0",
+    "drizzle-kit": "^0.31.10",
+    "electron": "^35.0.0",
+    "electron-builder": "^25.1.0",
+    "electron-vite": "^3.1.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.8.0",
+    "vite-plugin-monaco-editor": "^1.1.0"
+  },
+  "build": {
+    "appId": "com.devnonla.nonla-desk",
+    "productName": "Nonla Desk",
+    "artifactName": "nonla-desk-${version}-${arch}.${ext}",
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.icns"
+    },
+    "directories": {
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*",
+      "resources/**/*",
+      "!resources/sample-miniapps/**"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/sandbox-runner.js",
+        "to": "sandbox-runner.js"
+      },
+      {
+        "from": "resources/trayIconTemplate.png",
+        "to": "trayIconTemplate.png"
+      },
+      {
+        "from": "resources/trayIconTemplate@2x.png",
+        "to": "trayIconTemplate@2x.png"
+      }
+    ]
+  }
+}

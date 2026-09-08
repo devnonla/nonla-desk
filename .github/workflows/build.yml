@@ -1,0 +1,75 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Package macOS (arm64 + x64)
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: bunx electron-builder --mac --arm64 --x64 --publish never
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nonla-desk-macos
+          path: |
+            dist/*.dmg
+            dist/*.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(bun -e "console.log(require('./package.json').version)")
+          TAG="v${VERSION}"
+          COMMIT="${GITHUB_SHA:0:7}"
+
+          shopt -s nullglobt
+          files=(dist/*.dmg dist/*.zip)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No .dmg or .zip files found in dist/"
+            exit 1
+          fi
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists — updating assets"
+            gh release upload "$TAG" "${files[@]}" --clobber
+            gh release edit "$TAG" --notes "Automated build from \`${COMMIT}\` on \`${GITHUB_REF_NAME}\`."
+          else
+            echo "Creating release $TAG"
+            gh release create "$TAG" "${files[@]}" \
+              --title "$TAG" \
+              --notes "Automated build from \`${COMMIT}\` on \`${GITHUB_REF_NAME}\`."
+          fi
