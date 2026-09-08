@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain, nativeImage, shell } from 'electron'
+import { getSqlite } from './db'
 import { getMcpInfo, startMcpServer, stopMcpServer } from './mcp-server'
 import { createMenu } from './menu'
 import { loadAllMiniApps, setupMiniAppIPC, unloadAllMiniApps } from './mini-app-runtime'
@@ -122,6 +123,22 @@ app.whenReady().then(() => {
   // IPC handlers
   ipcMain.handle('get-app-version', () => app.getVersion())
   ipcMain.handle('mcp:info', () => getMcpInfo())
+  ipcMain.handle('config:get', (_event, key: string) => {
+    const row = getSqlite().prepare('SELECT value FROM configurations WHERE key = ?').get(key) as
+      | { value: string }
+      | undefined
+    return row?.value ?? null
+  })
+  ipcMain.handle('config:set', (_event, key: string, value: string) => {
+    getSqlite()
+      .prepare(
+        `INSERT INTO configurations (key, value, updated_at)
+         VALUES (?, ?, datetime('now'))
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
+      )
+      .run(key, value)
+    return { success: true }
+  })
 
   setupMiniAppIPC()
 
