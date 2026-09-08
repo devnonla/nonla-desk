@@ -40,4 +40,5 @@ Thumbs.db
 
 # Project-specific
 resources/sample-miniapps/
-scripts/
+scripts/*
+!scripts/install.sh
