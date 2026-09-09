@@ -45,6 +45,23 @@ interface MiniAppBackendInstance {
 
 const loadedApps = new Map<string, MiniAppBackendInstance>()
 
+export type MiniAppChangeAction = 'created' | 'updated' | 'deleted'
+
+export interface MiniAppChangeEvent {
+  action: MiniAppChangeAction
+  id: string
+  enabled?: boolean
+  codeChanged?: boolean
+  metadataChanged?: boolean
+}
+
+function broadcastMiniAppChange(event: MiniAppChangeEvent): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (win.isDestroyed()) continue
+    win.webContents.send('miniapp:changed', event)
+  }
+}
+
 // ─── IPC Message Bus ─────────────────────────────────────────────────────────
 // Allows backend ↔ frontend communication per mini app
 
@@ -634,6 +651,7 @@ function loadBackendCode(app: MiniAppRecord): MiniAppBackendInstance {
           console.warn(
             `[miniapp] ⚠️ Auto-disabled "${app.name}" due to backend crash (exit code: ${code})`,
           )
+          broadcastMiniAppChange({ action: 'updated', id: appId, enabled: false })
         } catch (_disableErr) {
           // Ignore — best effort
         }
@@ -654,6 +672,7 @@ function loadBackendCode(app: MiniAppRecord): MiniAppBackendInstance {
         appId,
       )
       console.warn(`[miniapp] ⚠️ Auto-disabled "${app.name}" due to backend error`)
+      broadcastMiniAppChange({ action: 'updated', id: appId, enabled: false })
     } catch (_disableErr) {
       // Ignore — best effort
     }
@@ -804,6 +823,7 @@ export function createMiniApp(data: {
     loadedApps.set(id, instance)
   }
 
+  broadcastMiniAppChange({ action: 'created', id, enabled: !!app.enabled })
   return app
 }
 
@@ -912,6 +932,18 @@ export async function updateMiniApp(
     }
   }
 
+  broadcastMiniAppChange({
+    action: 'updated',
+    id,
+    enabled: !!updated.enabled,
+    codeChanged,
+    metadataChanged:
+      data.name !== undefined ||
+      data.description !== undefined ||
+      data.icon !== undefined ||
+      data.category !== undefined ||
+      data.version !== undefined,
+  })
   return updated
 }
 
@@ -924,7 +956,11 @@ export async function deleteMiniApp(id: string): Promise<boolean> {
 
   // Storage will cascade delete due to FK constraint
   const result = sqlite.prepare('DELETE FROM mini_apps WHERE id = ?').run(id)
-  return result.changes > 0
+  const deleted = result.changes > 0
+  if (deleted) {
+    broadcastMiniAppChange({ action: 'deleted', id, enabled: false })
+  }
+  return deleted
 }
 
 export async function setMiniAppEnabled(

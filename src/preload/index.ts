@@ -1,5 +1,15 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
+export type MiniAppChangeAction = 'created' | 'updated' | 'deleted'
+
+export interface MiniAppChangeEvent {
+  action: MiniAppChangeAction
+  id: string
+  enabled?: boolean
+  codeChanged?: boolean
+  metadataChanged?: boolean
+}
+
 const api = {
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('get-app-version'),
   getMcpInfo: (): Promise<{ port: number; url: string; listening: boolean }> =>
@@ -75,6 +85,12 @@ const api = {
     const handler = (_event: Electron.IpcRendererEvent, msg: any) => callback(msg)
     ipcRenderer.on('miniapp:log', handler)
     return () => ipcRenderer.removeListener('miniapp:log', handler)
+  },
+  onMiniAppChanged: (callback: (event: MiniAppChangeEvent) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, event: MiniAppChangeEvent) =>
+      callback(event)
+    ipcRenderer.on('miniapp:changed', handler)
+    return () => ipcRenderer.removeListener('miniapp:changed', handler)
   },
 
   // v2: Read code from filesystem
