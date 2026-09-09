@@ -8,7 +8,7 @@ export default function AppLogo({
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="100 40 1336 960"
+      viewBox="100 20 1336 1120"
       width={size}
       height={size}
       className={className}
@@ -16,9 +16,7 @@ export default function AppLogo({
       aria-label="Nonla Desk logo"
     >
       <title>Nonla Desk</title>
-      <ellipse fill="#dd7627" cx="767" cy="640" rx="666" ry="190" />
-      <circle fill="#ffb45c" cx="768" cy="602" r="371.6" />
-      <path fill="none" stroke="#ffa333" strokeWidth="6" d="M112 640 A655 108 0 0 1 1422 640" />
+      <ellipse fill="#dd7627" cx="767" cy="640" rx="666" ry="52" />
       <path fill="none" stroke="#dd7627" strokeWidth="20" d="M112 640 A655 106 0 0 1 1422 640" />
       <path
         fill="#ffa333"
@@ -30,17 +28,8 @@ export default function AppLogo({
         <path d="M778 96 C836 241 892 377 948 507" />
         <path d="M786 96 C911 260 1081 421 1254 563" />
       </g>
-      <ellipse fill="#121212" cx="607.5" cy="705" rx="44.5" ry="68" />
-      <ellipse fill="#121212" cx="921.5" cy="705" rx="44.5" ry="68" />
-      <ellipse fill="#ffffff" cx="618" cy="678" rx="13" ry="19" />
-      <ellipse fill="#ffffff" cx="932" cy="678" rx="13" ry="19" />
-      <path
-        fill="none"
-        stroke="#121212"
-        strokeWidth="24"
-        strokeLinecap="round"
-        d="M696 802 C733 846 801 846 837 802"
-      />
+      <rect fill="#121212" x="463" y="720" width="191" height="407" rx="40" />
+      <rect fill="#121212" x="717" y="987" width="433" height="134" rx="40" />
     </svg>
   )
 }
