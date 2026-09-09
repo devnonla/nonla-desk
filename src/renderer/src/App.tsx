@@ -7,6 +7,7 @@ import MiniAppRenderer from './components/tools/MiniAppRenderer'
 import Settings from './components/tools/Settings'
 import { ConfirmProvider } from './components/ui/ConfirmDialog'
 import { ToastProvider } from './components/ui/Toast'
+import { useMiniAppChanges } from './hooks/useMiniAppChanges'
 
 function MiniAppRoute() {
   const { appId } = useParams<{ appId: string }>()
@@ -45,6 +46,14 @@ function AppShell() {
     if (!location.pathname) return
     loadMiniApps()
   }, [loadMiniApps, location.pathname])
+
+  useMiniAppChanges((event) => {
+    void loadMiniApps()
+    if (event.action !== 'deleted') return
+    const onMini = location.pathname === `/mini/${event.id}`
+    const onEdit = location.pathname === `/mini-apps/edit/${event.id}`
+    if (onMini || onEdit) navigate('/')
+  })
 
   useEffect(() => {
     const cleanupNav = window.api?.onNavigateTool((tool: string) => {

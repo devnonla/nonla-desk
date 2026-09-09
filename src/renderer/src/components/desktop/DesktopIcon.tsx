@@ -57,8 +57,18 @@ export function DesktopIcon({
         onContextMenu={handleContextMenu}
         className={iconButtonClass}
       >
-        <span className={plateClass(active, app.enabled ? '' : 'opacity-45')}>
-          <AppIcon name={app.icon} size={32} />
+        <span className={`${plateClass(active)} relative`}>
+          <span className={app.enabled ? '' : 'opacity-45'}>
+            <AppIcon name={app.icon} size={32} />
+          </span>
+          {active && !app.enabled ? (
+            <span
+              className="absolute -right-0.5 -bottom-0.5 w-4 h-4 rounded-full bg-[#1d2e12] flex items-center justify-center"
+              aria-hidden
+            >
+              <span className="w-2.5 h-2.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            </span>
+          ) : null}
         </span>
         <span className={labelClass}>{app.name}</span>
       </button>

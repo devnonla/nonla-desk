@@ -2,6 +2,7 @@ import Editor, { type BeforeMount } from '@monaco-editor/react'
 import { ArrowLeft, ChevronDown, Code, Eye, Save, Settings, Terminal, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useMiniAppChanges } from '../../hooks/useMiniAppChanges'
 import { ICON_CATALOG } from '../desktop/AppIcon'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -102,44 +103,54 @@ export default function MiniAppEditor() {
   const [configValues, setConfigValues] = useState<Record<string, any>>({})
 
   // Load existing app
-  const loadApp = useCallback(async () => {
-    if (!appId) return
-    setLoading(true)
-    try {
-      const app: MiniAppDetail | null = await window.api?.getMiniApp(appId)
-      if (!app) {
-        toast.error('Mini app not found')
-        navigate('/')
-        return
-      }
-      setFormName(app.name)
-      setFormDescription(app.description)
-      setFormIcon(app.icon)
-      setFormVersion(app.version)
-      setFormBackendCode(app.backendCode || '')
-      setFormFrontendCode(app.frontendCode || '')
-      setFormPanelCode(app.panelCode || '')
-
-      // Load config
+  const loadApp = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      if (!appId) return
+      if (!opts?.silent) setLoading(true)
       try {
-        const configResult = await window.api?.getMiniAppConfig(appId)
-        if (configResult?.success && configResult.schema) {
-          setConfigSchema(configResult.schema)
-          setConfigValues(configResult.values || {})
+        const app: MiniAppDetail | null = await window.api?.getMiniApp(appId)
+        if (!app) {
+          toast.error('Mini app not found')
+          navigate('/')
+          return
+        }
+        setFormName(app.name)
+        setFormDescription(app.description)
+        setFormIcon(app.icon)
+        setFormVersion(app.version)
+        setFormBackendCode(app.backendCode || '')
+        setFormFrontendCode(app.frontendCode || '')
+        setFormPanelCode(app.panelCode || '')
+
+        try {
+          const configResult = await window.api?.getMiniAppConfig(appId)
+          if (configResult?.success && configResult.schema) {
+            setConfigSchema(configResult.schema)
+            setConfigValues(configResult.values || {})
+          }
+        } catch {
+          // no config
         }
       } catch {
-        // no config
+        toast.error('Failed to load mini app')
+        navigate('/')
       }
-    } catch {
-      toast.error('Failed to load mini app')
-      navigate('/')
-    }
-    setLoading(false)
-  }, [appId, navigate])
+      setLoading(false)
+    },
+    [appId, navigate],
+  )
 
   useEffect(() => {
     loadApp()
   }, [loadApp])
+
+  useMiniAppChanges((event) => {
+    if (!appId || event.id !== appId || event.action === 'deleted') return
+    if (event.codeChanged || event.metadataChanged) {
+      void loadApp({ silent: true })
+    }
+    if (event.codeChanged) setPreviewKey((k) => k + 1)
+  })
 
   // ─── Log Listener ────────────────────────────────────────────────────────
 

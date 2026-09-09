@@ -1,5 +1,6 @@
 import { AlertCircle, AlertTriangle, Box, ShieldOff } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
+import { useMiniAppChanges } from '../../hooks/useMiniAppChanges'
 import { buildFrontendContext, evaluateComponent } from '../../lib/miniapp-helpers'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -9,6 +10,7 @@ interface MiniAppData {
   name: string
   frontendCode: string
   panelCode: string | null
+  enabled: boolean
 }
 
 interface MiniAppRendererProps {
@@ -103,17 +105,44 @@ class MiniAppErrorBoundary extends React.Component<
 
 // ─── Main Renderer Component ─────────────────────────────────────────────────
 
+function DevelopingOverlay() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-3 p-8">
+      <div className="w-5 h-5 border-2 border-(--color-primary) border-t-transparent rounded-full animate-spin" />
+      <div className="text-center">
+        <h3 className="text-sm font-semibold text-(--color-ink) mb-1">Updating app</h3>
+        <p className="text-xs text-(--color-mute) max-w-sm">
+          This app is disabled while changes are applied. It will reload when enabled.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default function MiniAppRenderer({ appId }: MiniAppRendererProps) {
   const [appData, setAppData] = useState<MiniAppData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [enabled, setEnabled] = useState(true)
+  const [revision, setRevision] = useState(0)
   const ctxRef = useRef<ReturnType<typeof buildFrontendContext> | null>(null)
   const componentRef = useRef<React.ComponentType<any> | null>(null)
   const panelComponentRef = useRef<React.ComponentType<any> | null>(null)
 
-  // Load app data from main process
+  useMiniAppChanges((event) => {
+    if (event.id !== appId || event.action === 'deleted') return
+    if (event.enabled === false) {
+      setEnabled(false)
+      return
+    }
+    if (event.codeChanged || !enabled) {
+      setRevision((n) => n + 1)
+    }
+  })
+
   useEffect(() => {
     let cancelled = false
+    void revision
     setLoading(true)
     setError(null)
 
@@ -127,8 +156,15 @@ export default function MiniAppRenderer({ appId }: MiniAppRendererProps) {
           return
         }
         setAppData(data)
+        setEnabled(!!data.enabled)
 
-        // Build context and evaluate code
+        if (!data.enabled) {
+          componentRef.current = null
+          panelComponentRef.current = null
+          setLoading(false)
+          return
+        }
+
         const ctx = buildFrontendContext(appId)
         ctxRef.current = ctx
 
@@ -153,7 +189,11 @@ export default function MiniAppRenderer({ appId }: MiniAppRendererProps) {
     return () => {
       cancelled = true
     }
-  }, [appId])
+  }, [appId, revision])
+
+  if (!enabled) {
+    return <DevelopingOverlay />
+  }
 
   if (loading) {
     return (
@@ -185,9 +225,8 @@ export default function MiniAppRenderer({ appId }: MiniAppRendererProps) {
   const MainComponent = componentRef.current
   const ctx = ctxRef.current!
 
-  // Panel code is only used in the tray popup (Quick Tools), not rendered here
   return (
-    <MiniAppErrorBoundary appId={appId} appName={appData.name}>
+    <MiniAppErrorBoundary key={`${appId}-${revision}`} appId={appId} appName={appData.name}>
       <MainComponent ctx={ctx} />
     </MiniAppErrorBoundary>
   )

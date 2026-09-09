@@ -1,6 +1,7 @@
 import { ChevronLeft, LayoutGrid } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useMiniAppChanges } from '../../hooks/useMiniAppChanges'
 import { buildFrontendContext, evaluateComponent } from '../../lib/miniapp-helpers'
 import { AppIcon } from '../desktop/AppIcon'
 import AppLogo from '../ui/AppLogo'
@@ -43,7 +44,6 @@ function MiniAppPanelView({ appId, panelCode }: { appId: string; panelCode: stri
 interface TrayTool {
   id: string
   label: string
-  desc: string
   icon: React.ReactNode
 }
 
@@ -51,7 +51,6 @@ interface MiniAppPanelInfo {
   id: string
   name: string
   icon: string
-  description: string
   panelCode: string
 }
 
@@ -80,7 +79,6 @@ export default function TrayPanel() {
             id: d.id,
             name: d.name,
             icon: d.icon,
-            description: d.description,
             panelCode: d.panelCode,
           })),
       )
@@ -89,10 +87,17 @@ export default function TrayPanel() {
     }
   }, [])
 
-  // Load on mount
   useEffect(() => {
     loadPanels()
   }, [loadPanels])
+
+  useMiniAppChanges((event) => {
+    void loadPanels()
+    if (!activeTool) return
+    if (event.id === activeTool && (event.action === 'deleted' || event.enabled === false)) {
+      setActiveTool(null)
+    }
+  })
 
   // Reload when tray becomes visible (so toggle changes in main window are reflected instantly)
   useEffect(() => {
@@ -110,8 +115,7 @@ export default function TrayPanel() {
       return {
         id: app.id,
         label: app.name,
-        desc: app.description || 'Mini App',
-        icon: <AppIcon name={app.icon} size={18} />,
+        icon: <AppIcon name={app.icon} size={16} />,
       }
     })
   }, [miniAppPanels])
@@ -135,7 +139,7 @@ export default function TrayPanel() {
         <div className="py-2.5 px-3 border-b border-(--color-hairline) flex items-center">
           {activeTool ? (
             <div
-              className="flex items-center gap-1.5 text-xs font-medium text-(--color-primary-soft) cursor-pointer transition-colors duration-150 select-none hover:text-(--color-primary)"
+              className="flex items-center gap-1.5 text-[13px] font-semibold text-(--color-ink) cursor-pointer transition-colors duration-150 select-none hover:text-(--color-primary-deep)"
               onClick={() => setActiveTool(null)}
             >
               <ChevronLeft size={12} />
@@ -145,12 +149,13 @@ export default function TrayPanel() {
             <div className="flex items-center gap-2">
               <AppLogo size={20} />
               <span className="text-[13px] font-bold text-(--color-primary)">Nonla Desk</span>
-              <span className="text-[11px] text-(--color-mute)">Quick Tools</span>
             </div>
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3">
+        <div
+          className={`flex-1 overflow-y-auto ${activeTool || allTools.length === 0 ? 'p-3' : 'px-1.5 py-1'}`}
+        >
           {activeTool ? (
             renderContent()
           ) : allTools.length === 0 ? (
@@ -169,22 +174,21 @@ export default function TrayPanel() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col">
               {allTools.map((tool) => (
-                <div
+                <button
                   key={tool.id}
-                  className="flex items-center gap-3 p-3 bg-(--color-canvas-soft) border border-(--color-hairline) rounded-md cursor-pointer transition-all duration-150 select-none hover:border-(--color-primary)"
+                  type="button"
+                  className="flex items-center gap-2.5 w-full px-2 py-1.5 rounded-md cursor-pointer select-none text-left transition-colors duration-100 hover:bg-(--color-canvas-soft)"
                   onClick={() => setActiveTool(tool.id)}
                 >
-                  <div className="w-9 h-9 flex items-center justify-center rounded-md bg-(--color-primary-glow) text-(--color-primary-soft) text-base shrink-0">
+                  <span className="w-5 h-5 flex items-center justify-center shrink-0">
                     {tool.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-medium text-(--color-ink)">{tool.label}</div>
-                    <div className="text-[11px] text-(--color-mute) mt-px">{tool.desc}</div>
-                  </div>
-                  <div className="text-lg text-(--color-mute) shrink-0">›</div>
-                </div>
+                  </span>
+                  <span className="flex-1 min-w-0 truncate text-[13px] font-medium text-(--color-ink)">
+                    {tool.label}
+                  </span>
+                </button>
               ))}
             </div>
           )}

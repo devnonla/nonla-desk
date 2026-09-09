@@ -2,6 +2,7 @@ import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import meadowWallpaper from '@/assets/desktop-meadow.jpg'
+import { useMiniAppChanges } from '../../hooks/useMiniAppChanges'
 import { AppIcon } from '../desktop/AppIcon'
 import { DesktopCommandPalette } from '../desktop/DesktopCommandPalette'
 import { DesktopIcon, DesktopSystemIcon } from '../desktop/DesktopIcon'
@@ -43,13 +44,9 @@ export default function Dashboard() {
     if (location.pathname) loadApps()
   }, [loadApps, location.pathname])
 
-  useEffect(() => {
-    if (loading || apps.length > 0) return
-    const id = window.setInterval(() => {
-      void loadApps()
-    }, 1500)
-    return () => window.clearInterval(id)
-  }, [apps.length, loading, loadApps])
+  useMiniAppChanges(() => {
+    void loadApps()
+  })
 
   const activeMiniId = location.pathname.startsWith('/mini/')
     ? location.pathname.replace('/mini/', '')
