@@ -129,31 +129,6 @@ nonla-desk/
 | `bun run format`       | Format code                      |
 | `bun run check`        | Lint + format (auto-fix)         |
 
-## 📋 Changelog
-
-### v0.2.1 — 2026-09-08
-
-**Added**
-
-- MCP connect card on the empty desktop, with steps to connect Cursor, Claude Code, or Antigravity
-- First-launch docs and an unofficial pre-release notice in the README
-- Installer script on GitHub so the README curl one-liner works
-
-**Changed**
-
-- Sample Quick Note app is no longer seeded on first launch; the connect card stays until a mini app exists
-
-### v0.1.0 — 2026-09-08
-
-**Added**
-
-- First public release of Nonla Desk for macOS
-- Mini app platform: create, install, edit, enable/disable, and delete apps with React/JSX UI, Node.js backends, and tray panels
-- Built-in MCP server so Cursor, Claude Code, and similar editors can manage mini apps
-- Menu bar tray with a quick-access panel
-- Local SQLite persistence for mini app data and settings
-- Meadow desktop workspace with command palette and windowed tools
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please read the [Contributing Guide](CONTRIBUTING.md) before submitting a Pull Request.
