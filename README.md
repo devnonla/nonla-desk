@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="resources/logo.svg" alt="Nonla Desk" width="128" height="128">
+  <img src="build/icon.png" alt="Nonla Desk" width="128" height="128">
 </p>
 
 <h1 align="center">Nonla Desk</h1>
@@ -12,8 +12,6 @@
   <a href="https://github.com/devnonla/nonla-desk/releases"><img src="https://img.shields.io/github/v/release/devnonla/nonla-desk?style=flat-square" alt="Release"></a>
   <a href="https://github.com/devnonla/nonla-desk/blob/main/LICENSE"><img src="https://img.shields.io/github/license/devnonla/nonla-desk?style=flat-square" alt="License"></a>
 </p>
-
-> **Unofficial pre-release.** This is not a stable product yet. MCP tools, mini apps, and the desktop UI may change without notice.
 
 ---
 
