@@ -1,7 +1,7 @@
 {
   "name": "nonla-desk",
   "description": "Build and manage Nonla Desk mini apps (React frontend, Bun backend, menu bar panel) with the local nonla CLI.",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "author": {
     "name": "devnonla"
   },

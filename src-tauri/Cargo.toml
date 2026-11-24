@@ -1,6 +1,6 @@
 [package]
 name = "nonla-desk"
-version = "0.2.2"
+version = "0.3.0"
 description = "Developer utilities desktop app for macOS"
 authors = ["devnonla"]
 license = "MIT"
