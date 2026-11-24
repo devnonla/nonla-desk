@@ -1,0 +1,16 @@
+{
+  "name": "nonla-desk",
+  "owner": {
+    "name": "devnonla"
+  },
+  "plugins": [
+    {
+      "name": "nonla-desk",
+      "source": "./plugins/nonla-desk",
+      "description": "Build and manage Nonla Desk mini apps with the nonla CLI."
+    }
+  ],
+  "metadata": {
+    "description": "Skills for Nonla Desk, the macOS desktop for mini apps that coding agents write."
+  }
+}

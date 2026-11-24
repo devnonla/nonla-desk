@@ -41,3 +41,5 @@ Thumbs.db
 resources/sample-miniapps/
 scripts/*
 !scripts/install.sh
+!scripts/build-app.ts
+!scripts/updater-manifest.ts

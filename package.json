@@ -1,8 +1,8 @@
 {
   "name": "nonla-desk",
   "version": "0.2.2",
+  "private": true,
   "description": "Developer utilities desktop app for macOS",
-  "main": "./out/main/index.js",
   "author": "devnonla",
   "homepage": "https://github.com/devnonla/nonla-desk",
   "repository": {
@@ -10,111 +10,43 @@
     "url": "https://github.com/devnonla/nonla-desk.git"
   },
   "license": "MIT",
+  "type": "module",
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
-    "preview": "electron-vite preview",
-    "start": "electron-vite preview",
+    "dev": "tauri dev",
+    "build": "bun scripts/build-app.ts",
+    "build:web": "tsc --noEmit && vite build",
+    "vite": "vite",
+    "tauri": "tauri",
+    "nonla": "./src-tauri/target/debug/nonla-desk",
+    "typecheck": "tsc --noEmit",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check --write .",
-    "postinstall": "electron-builder install-app-deps",
-    "build:unpack": "bun run build && electron-builder --dir",
-    "build:mac": "bun run build && electron-builder --mac",
     "local": "bash scripts/local.sh"
   },
   "dependencies": {
-    "@electron-toolkit/utils": "^4.0.0",
-    "@langchain/anthropic": "^1.5.10",
-    "@langchain/core": "^1.2.10",
-    "@langchain/google-genai": "^2.3.1",
-    "@langchain/langgraph": "^1.4.14",
-    "@langchain/openai": "^1.5.12",
-    "@modelcontextprotocol/sdk": "^1.30.0",
-    "@monaco-editor/react": "^4.7.0",
-    "@phosphor-icons/react": "^2.1.10",
-    "@radix-ui/react-use-controllable-state": "^1.2.6",
-    "@streamdown/cjk": "^1.0.3",
-    "@streamdown/code": "^1.1.1",
-    "@streamdown/math": "^1.0.2",
-    "@streamdown/mermaid": "^1.0.2",
-    "adm-zip": "^0.5.17",
-    "ai": "^7.0.97",
-    "antd": "^6.6.2",
+    "@tauri-apps/api": "^2.12.5",
     "aos": "^2.3.4",
-    "better-sqlite3": "^12.10.0",
-    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "cmdk": "^1.1.1",
-    "cn": "^0.2.6",
-    "drizzle-orm": "^0.45.2",
-    "lucide-react": "^1.17.0",
-    "monaco-editor": "^0.55.1",
-    "motion": "12",
-    "nanoid": "^6.0.1",
-    "radix-ui": "^1.6.7",
+    "devnonla-ui": "^0.20.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^7.17.0",
-    "shiki": "^4.4.3",
-    "streamdown": "^2.6.0",
+    "react-hook-form": "^7.92.0",
     "sucrase": "^3.35.1",
-    "tailwind-merge": "^3.6.0",
-    "tw-animate-css": "^1.4.0",
-    "use-stick-to-bottom": "^1.1.6",
-    "zod": "^4.6.1"
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.0",
     "@tailwindcss/language-server": "^0.16.0",
     "@tailwindcss/vite": "^4.1.0",
-    "@types/adm-zip": "^0.5.8",
+    "@tauri-apps/cli": "^2.12.6",
     "@types/aos": "^3.0.8",
-    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.4.0",
-    "drizzle-kit": "^0.31.10",
-    "electron": "^35.0.0",
-    "electron-builder": "^25.1.0",
-    "electron-vite": "^3.1.0",
     "tailwindcss": "^4.1.0",
     "typescript": "^5.8.0",
-    "vite-plugin-monaco-editor": "^1.1.0"
-  },
-  "build": {
-    "appId": "com.devnonla.nonla-desk",
-    "productName": "Nonla Desk",
-    "artifactName": "nonla-desk-${version}-${arch}.${ext}",
-    "mac": {
-      "category": "public.app-category.developer-tools",
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "icon": "build/icon.icns"
-    },
-    "directories": {
-      "buildResources": "build"
-    },
-    "files": [
-      "out/**/*",
-      "resources/**/*",
-      "!resources/sample-miniapps/**"
-    ],
-    "extraResources": [
-      {
-        "from": "resources/sandbox-runner.js",
-        "to": "sandbox-runner.js"
-      },
-      {
-        "from": "resources/trayIconTemplate.png",
-        "to": "trayIconTemplate.png"
-      },
-      {
-        "from": "resources/trayIconTemplate@2x.png",
-        "to": "trayIconTemplate@2x.png"
-      }
-    ]
+    "vite": "^6.3.0"
   }
 }

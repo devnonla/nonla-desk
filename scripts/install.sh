@@ -101,6 +101,29 @@ rm -rf "$TMP_DIR"
 # ─── Clear Quarantine ────────────────────────────────────────────────────────
 xattr -cr "${INSTALL_DIR}/${APP_BASENAME}" 2>/dev/null || true
 
+# ─── Bun (runs mini app backends) ─────────────────────────────────────────────
+if [ -x "$HOME/.bun/bin/bun" ] || command -v bun >/dev/null 2>&1; then
+  echo -e "${DIM}  Bun found: $(command -v bun || echo "$HOME/.bun/bin/bun")${NC}"
+else
+  echo -e "${BOLD}Installing Bun (runs mini app backends)...${NC}"
+  if curl -fsSL https://bun.sh/install | bash >/dev/null; then
+    echo -e "${GREEN}Bun installed.${NC}"
+  else
+    echo -e "${YELLOW}Could not install Bun. Mini app backends need it (or Node.js):${NC}"
+    echo -e "${DIM}  curl -fsSL https://bun.sh/install | bash${NC}"
+  fi
+fi
+
+# ─── nonla CLI ───────────────────────────────────────────────────────────────
+CLI_DIR="$HOME/.local/bin"
+mkdir -p "$CLI_DIR"
+ln -sf "${INSTALL_DIR}/${APP_BASENAME}/Contents/MacOS/nonla-desk" "$CLI_DIR/nonla"
+echo -e "  CLI linked: ${CYAN}${CLI_DIR}/nonla${NC}"
+case ":$PATH:" in
+  *":$CLI_DIR:"*) ;;
+  *) echo -e "${YELLOW}  Add ${CLI_DIR} to your PATH:${NC} ${DIM}echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.zshrc${NC}" ;;
+esac
+
 # ─── Done ─────────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${GREEN}=======================================${NC}"
@@ -109,5 +132,6 @@ echo -e "${GREEN}=======================================${NC}"
 echo ""
 echo -e "  Location: ${CYAN}${INSTALL_DIR}/${APP_BASENAME}${NC}"
 echo -e "  Launch:   ${DIM}open -a \"${APP_NAME}\"${NC}"
+echo -e "  Agents:   ${DIM}nonla guide${NC}"
 echo ""
 echo -e "${GREEN}Done! 🎉${NC}"

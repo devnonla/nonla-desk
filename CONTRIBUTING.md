@@ -57,9 +57,9 @@ bun run check
 
 ### Project Architecture
 
-- **`src/main/`** — Electron main process (Node.js runtime)
-- **`src/preload/`** — Preload scripts for secure IPC bridge
-- **`src/renderer/`** — React frontend (browser runtime)
+- **`src-tauri/`** — Rust core: database, mini app runtime, `nonla` CLI, tray
+- **`src-tauri/resources/sandbox-runner.cjs`** — Host process for mini app backends (Bun/Node)
+- **`src/`** — React frontend (Tauri webview)
 
 ## Pull Request Process
 

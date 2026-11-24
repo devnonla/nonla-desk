@@ -81,8 +81,8 @@
       "!**/*.json",
       "!**/sample-miniapps/**",
       "!**/.cursor/**",
-      "!**/src/renderer/src/components/ai-elements/**",
-      "!**/src/renderer/src/components/shadcn/**"
+      "!**/src-tauri/target/**",
+      "!**/src-tauri/gen/**"
     ]
   }
 }

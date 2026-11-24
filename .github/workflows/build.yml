@@ -14,9 +14,14 @@ permissions:
 
 jobs:
   build-macos:
-    name: Build macOS
+    name: Build macOS (universal)
     runs-on: macos-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
+    env:
+      # In-app updates: on only when these are configured (see scripts/build-app.ts).
+      NONLA_UPDATER_PUBKEY: ${{ vars.TAURI_UPDATER_PUBKEY }}
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
     steps:
       - name: Checkout
@@ -27,24 +32,37 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build
-        run: bun run build
+      - name: Build frontend
+        run: bun run build:web
 
-      - name: Package macOS (arm64 + x64)
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: bunx electron-builder --mac --arm64 --x64 --publish never
+      - name: Test
+        run: cargo test --manifest-path src-tauri/Cargo.toml --lib
+
+      - name: Build app (universal DMG + update archive)
+        run: bun scripts/build-app.ts --target universal-apple-darwin --archive
+
+      - name: Update manifest
+        if: env.NONLA_UPDATER_PUBKEY != '' && env.TAURI_SIGNING_PRIVATE_KEY != ''
+        run: bun scripts/updater-manifest.ts && cat release/latest.json
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: nonla-desk-macos
-          path: |
-            dist/*.dmg
-            dist/*.zip
+          path: release/*
           if-no-files-found: error
           retention-days: 14
 
@@ -55,21 +73,13 @@ jobs:
           VERSION=$(bun -e "console.log(require('./package.json').version)")
           TAG="v${VERSION}"
           COMMIT="${GITHUB_SHA:0:7}"
-
-          shopt -s nullglob
-          files=(dist/*.dmg dist/*.zip)
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No .dmg or .zip files found in dist/"
-            exit 1
-          fi
-
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists — updating assets"
-            gh release upload "$TAG" "${files[@]}" --clobber
+            gh release upload "$TAG" release/* --clobber
             gh release edit "$TAG" --notes "Automated build from \`${COMMIT}\` on \`${GITHUB_REF_NAME}\`."
           else
             echo "Creating release $TAG"
-            gh release create "$TAG" "${files[@]}" \
+            gh release create "$TAG" release/* \
               --title "$TAG" \
               --notes "Automated build from \`${COMMIT}\` on \`${GITHUB_REF_NAME}\`."
           fi
