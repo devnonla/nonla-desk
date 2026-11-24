@@ -1,6 +1,7 @@
 import { Check, Copy, Settings as SettingsIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from '../ui/Toast'
+import LlmProviders from './LlmProviders'
 
 const SERVER_KEY = 'nonla-desk'
 const FALLBACK_PORT = import.meta.env.DEV ? 24817 : 24816
@@ -163,6 +164,12 @@ export default function Settings() {
           Connect Cursor, Claude Code, or Antigravity over MCP so the agent can write mini apps.
           Nonla Desk must stay running while the editor is connected.
         </p>
+      </div>
+
+      <div className="w-full h-px border-t border-dashed border-[rgba(79,93,117,0.4)] mb-8" />
+
+      <div className="mb-10">
+        <LlmProviders />
       </div>
 
       <div className="w-full h-px border-t border-dashed border-[rgba(79,93,117,0.4)] mb-8" />

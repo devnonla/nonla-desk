@@ -104,6 +104,63 @@ const api = {
   setConfig: (key: string, value: string): Promise<{ success: boolean }> =>
     ipcRenderer.invoke('config:set', key, value),
 
+  listLlmProviders: (): Promise<{
+    success: boolean
+    providers?: {
+      id: string
+      name: string
+      provider: string
+      endpoint: string
+      apiKey: string
+      models: { id: string; name: string }[]
+    }[]
+    error?: string
+  }> => ipcRenderer.invoke('llm:list-providers'),
+  addLlmProvider: (data: {
+    name?: string
+    provider: string
+    apiKey?: string
+    endpoint?: string
+  }): Promise<{
+    success: boolean
+    id?: string
+    models?: { id: string; name: string }[]
+    error?: string
+  }> => ipcRenderer.invoke('llm:add-provider', data),
+
+  getAssistant: (): Promise<{
+    success: boolean
+    providerId?: string | null
+    model?: string | null
+    messages?: { role: 'user' | 'assistant'; content: string }[]
+    error?: string
+  }> => ipcRenderer.invoke('assistant:get'),
+  setAssistantModel: (data: {
+    providerId: string
+    model: string
+  }): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('assistant:set-model', data),
+  chatAssistant: (
+    message: string,
+  ): Promise<{ success: boolean; requestId?: string; error?: string }> =>
+    ipcRenderer.invoke('assistant:chat', message),
+  clearAssistantChat: (): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('assistant:clear'),
+  abortAssistant: (): Promise<{ success: boolean }> => ipcRenderer.invoke('assistant:abort'),
+  onAssistantEvent: (
+    callback: (event: {
+      requestId: string
+      type: 'token' | 'tool' | 'done' | 'error'
+      text?: string
+      tool?: { name: string; status: 'start' | 'end'; output?: string }
+      error?: string
+    }) => void,
+  ) => {
+    const handler = (_event: Electron.IpcRendererEvent, event: any) => callback(event)
+    ipcRenderer.on('assistant:event', handler)
+    return () => ipcRenderer.removeListener('assistant:event', handler)
+  },
+
   // Tray visibility
   hideTray: (): Promise<{ success: boolean }> => ipcRenderer.invoke('tray:hide'),
   openMenuBarSettings: (): Promise<void> => ipcRenderer.invoke('tray:open-menu-bar-settings'),

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DesktopWindow } from './components/desktop/DesktopWindow'
 import Dashboard from './components/layout/Dashboard'
+import AgentChat from './components/tools/AgentChat'
 import MiniAppEditor from './components/tools/MiniAppEditor'
 import MiniAppRenderer from './components/tools/MiniAppRenderer'
 import Settings from './components/tools/Settings'
@@ -92,7 +93,9 @@ function AppShell() {
       ? 'New App'
       : activeTool === 'settings'
         ? 'Settings'
-        : null
+        : activeTool === 'agent'
+          ? 'Agent'
+          : null
 
   const windowIcon = windowApp
     ? windowApp.icon
@@ -100,7 +103,9 @@ function AppShell() {
       ? 'Plus'
       : activeTool === 'settings'
         ? 'Settings'
-        : undefined
+        : activeTool === 'agent'
+          ? 'Robot'
+          : undefined
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden">
@@ -158,6 +163,14 @@ function AppShell() {
                   element={
                     <div className="h-full overflow-y-auto p-6">
                       <Settings />
+                    </div>
+                  }
+                />
+                <Route
+                  path="/agent"
+                  element={
+                    <div className="h-full overflow-hidden">
+                      <AgentChat />
                     </div>
                   }
                 />

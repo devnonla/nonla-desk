@@ -3,9 +3,33 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css" layer(utilities);
+@import "tw-animate-css";
 
-/* Mini apps are eval'd at runtime — scan the allowlist so gap/padding/tokens exist. */
+@source "../../../../node_modules/streamdown/dist/*.js";
 @source "../lib/miniapp-tailwind-safelist.ts";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
 
 /* ========================================
    Nonla Desk — Voltagent Design System
@@ -53,6 +77,25 @@
     --font-mono: "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono",
       "JetBrains Mono", monospace;
     --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+
+    --background: #ffffff;
+    --foreground: #1d1d1d;
+    --card: #ffffff;
+    --card-foreground: #1d1d1d;
+    --popover: #ffffff;
+    --popover-foreground: #1d1d1d;
+    --primary: #eb9d29;
+    --primary-foreground: #101010;
+    --secondary: #eeefe9;
+    --secondary-foreground: #1d1d1d;
+    --muted: #f4f4ef;
+    --muted-foreground: #8b8d86;
+    --accent: #f4f4ef;
+    --accent-foreground: #1d1d1d;
+    --destructive: #c0392b;
+    --border: #d4d5ce;
+    --input: #d4d5ce;
+    --ring: #eb9d29;
 
     color-scheme: light;
 

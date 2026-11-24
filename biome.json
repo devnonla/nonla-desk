@@ -80,7 +80,9 @@
       "!**/.vite/**",
       "!**/*.json",
       "!**/sample-miniapps/**",
-      "!**/.cursor/**"
+      "!**/.cursor/**",
+      "!**/src/renderer/src/components/ai-elements/**",
+      "!**/src/renderer/src/components/shadcn/**"
     ]
   }
 }

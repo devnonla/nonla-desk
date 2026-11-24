@@ -1,4 +1,4 @@
-import { Search, Settings, Upload, X } from 'lucide-react'
+import { Bot, Search, Settings, Upload, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AppIcon } from './AppIcon'
@@ -11,6 +11,7 @@ interface DesktopCommandPaletteProps {
   onOpenApp: (app: AppItem) => void
   onImportApp: () => void
   onOpenSettings: () => void
+  onOpenAgent: () => void
 }
 
 export function DesktopCommandPalette({
@@ -20,6 +21,7 @@ export function DesktopCommandPalette({
   onOpenApp,
   onImportApp,
   onOpenSettings,
+  onOpenAgent,
 }: DesktopCommandPaletteProps) {
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -52,6 +54,12 @@ export function DesktopCommandPalette({
         action: onImportApp,
       },
       {
+        id: 'cmd-agent',
+        title: 'Open Agent',
+        icon: <Bot size={14} />,
+        action: onOpenAgent,
+      },
+      {
         id: 'cmd-settings',
         title: 'Open Settings',
         icon: <Settings size={14} />,
@@ -62,7 +70,7 @@ export function DesktopCommandPalette({
     if (!query.trim()) return list
     const q = query.toLowerCase()
     return list.filter((item) => item.title.toLowerCase().includes(q))
-  }, [query, onImportApp, onOpenSettings])
+  }, [query, onImportApp, onOpenSettings, onOpenAgent])
 
   const totalItems = filteredApps.length + systemActions.length
 

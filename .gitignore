@@ -36,7 +36,6 @@ Thumbs.db
 .idea/
 .agents/
 .cursor/
-.codegraph/
 
 # Project-specific
 resources/sample-miniapps/

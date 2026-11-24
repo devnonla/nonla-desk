@@ -37,9 +37,26 @@ export const miniAppStorage = sqliteTable('mini_app_storage', {
     .$defaultFn(() => new Date().toISOString()),
 })
 
+export const llmProviders = sqliteTable('llm_providers', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  provider: text('provider').notNull(),
+  apiKey: text('api_key').notNull().default(''),
+  endpoint: text('endpoint'),
+  models: text('models').notNull().default('[]'),
+  createdAt: text('created_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+})
+
 export type ConfigurationEntry = typeof configurations.$inferSelect
 export type NewConfigurationEntry = typeof configurations.$inferInsert
 export type MiniAppEntry = typeof miniApps.$inferSelect
 export type NewMiniAppEntry = typeof miniApps.$inferInsert
 export type MiniAppStorageEntry = typeof miniAppStorage.$inferSelect
 export type NewMiniAppStorageEntry = typeof miniAppStorage.$inferInsert
+export type LlmProviderEntry = typeof llmProviders.$inferSelect
+export type NewLlmProviderEntry = typeof llmProviders.$inferInsert

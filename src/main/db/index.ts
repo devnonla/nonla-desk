@@ -52,9 +52,18 @@ export function getDb() {
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       UNIQUE(app_id, key)
     );
+    CREATE TABLE IF NOT EXISTS llm_providers (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      api_key TEXT NOT NULL DEFAULT '',
+      endpoint TEXT,
+      models TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `)
   sqlite.exec('DROP TABLE IF EXISTS agents')
-  sqlite.exec('DROP TABLE IF EXISTS llm_providers')
 
   db = drizzle(sqlite, { schema })
   return db

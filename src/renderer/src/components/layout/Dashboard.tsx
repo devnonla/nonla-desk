@@ -241,6 +241,12 @@ export default function Dashboard() {
         className="absolute right-0 top-0 bottom-0 z-20 w-27 overflow-y-auto py-4 flex flex-col items-center gap-2"
       >
         <DesktopSystemIcon
+          label="Agent"
+          icon={<AppIcon name="Robot" size={32} />}
+          active={location.pathname === '/agent'}
+          onClick={() => navigate(location.pathname === '/agent' ? '/' : '/agent')}
+        />
+        <DesktopSystemIcon
           label="Import"
           icon={<AppIcon name="Upload" size={32} />}
           onClick={() => fileInputRef.current?.click()}
@@ -265,10 +271,14 @@ export default function Dashboard() {
         onOpenApp={openApp}
         onImportApp={() => fileInputRef.current?.click()}
         onOpenSettings={() => navigate('/settings')}
+        onOpenAgent={() => navigate('/agent')}
       />
 
       {!loading && apps.length === 0 && location.pathname === '/' && (
-        <McpOnboarding onConnect={() => navigate('/settings')} />
+        <McpOnboarding
+          onConnect={() => navigate('/settings')}
+          onOpenAgent={() => navigate('/agent')}
+        />
       )}
     </div>
   )

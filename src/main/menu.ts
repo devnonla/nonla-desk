@@ -59,6 +59,11 @@ export function createMenu(onToolSelect: (tool: string) => void): void {
           accelerator: 'CmdOrCtrl+B',
           click: () => onToolSelect(''),
         },
+        {
+          label: 'Agent',
+          accelerator: 'CmdOrCtrl+Shift+A',
+          click: () => onToolSelect('agent'),
+        },
         { type: 'separator' },
         { role: 'reload' },
         { role: 'forceReload' },

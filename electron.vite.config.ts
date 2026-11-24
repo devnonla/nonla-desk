@@ -18,7 +18,7 @@ export default defineConfig({
       dedupe: ['react', 'react-dom', 'antd', 'motion'],
     },
     optimizeDeps: {
-      include: ['antd', 'motion', 'motion/react'],
+      include: ['antd', 'motion', 'motion/react', 'radix-ui', 'streamdown', 'cn', 'cmdk'],
     },
     plugins: [react(), tailwindcss()],
   },

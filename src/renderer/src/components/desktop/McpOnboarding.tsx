@@ -1,19 +1,20 @@
-import { Plug } from 'lucide-react'
+import { Bot, Plug } from 'lucide-react'
 import { useId } from 'react'
 import AppLogo from '../ui/AppLogo'
 import { Button } from '../ui/Button'
 
 const STEPS = [
-  'Open Settings and copy the MCP snippet for Cursor, Claude Code, or Antigravity.',
-  "Paste it into that editor's MCP config, then reload the editor.",
-  'Keep Nonla Desk running. Ask the agent to create a mini app / tool.',
+  'Open Agent on the right and add an LLM key in Settings, or copy the MCP snippet for Cursor.',
+  'Keep Nonla Desk running while the agent writes tools.',
+  'Ask it to create a mini app.',
 ]
 
 interface McpOnboardingProps {
   onConnect: () => void
+  onOpenAgent?: () => void
 }
 
-export function McpOnboarding({ onConnect }: McpOnboardingProps) {
+export function McpOnboarding({ onConnect, onOpenAgent }: McpOnboardingProps) {
   const titleId = useId()
   const bodyId = useId()
 
@@ -37,11 +38,11 @@ export function McpOnboarding({ onConnect }: McpOnboardingProps) {
             id={titleId}
             className="text-[22px] font-semibold tracking-[-0.4px] leading-7 text-(--color-ink-strong) m-0 mb-2"
           >
-            Connect MCP to write tools
+            Write tools with Agent
           </h2>
           <p id={bodyId} className="text-[13px] leading-5 text-(--color-body) m-0 mb-5">
-            Mini apps are written from an AI editor, not from this window. Connect MCP first or
-            there is nothing for the agent to talk to.
+            Open Agent on the right to chat, or connect Cursor over MCP. Either way Nonla Desk must
+            stay running.
           </p>
 
           <ol className="m-0 pl-5 flex flex-col gap-2.5">
@@ -54,8 +55,11 @@ export function McpOnboarding({ onConnect }: McpOnboardingProps) {
         </div>
 
         <div className="flex items-center justify-end gap-2 px-6 py-3 border-t border-(--color-hairline) bg-(--color-canvas-soft)">
-          <Button type="primary" onClick={onConnect}>
+          <Button type="default" onClick={onConnect}>
             Open Settings
+          </Button>
+          <Button type="primary" icon={<Bot size={14} />} onClick={onOpenAgent || onConnect}>
+            Open Agent
           </Button>
         </div>
       </div>

@@ -41,6 +41,7 @@ export const ICON_CATALOG = [
 const ALIASES: Record<string, string> = {
   Gear: '⚙️',
   Bot: '🤖',
+  Agent: '🤖',
   Sparkle: '✨',
   Upload: '📤',
   UploadSimple: '📤',
