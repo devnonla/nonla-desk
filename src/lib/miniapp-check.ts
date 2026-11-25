@@ -38,8 +38,9 @@ function checkFile(kind: FileKind, code: string | undefined): FileCheck {
   }
 
   const stripped = stripComments(source)
-  if (/^\s*import\s/m.test(stripped) || /^\s*export\s/m.test(stripped)) {
-    errors.push('Do not use import/export. Use module.exports = function ...')
+  // Backends are plain CommonJS; frontends and panels may import libraries.
+  if (kind === 'backend' && (/^\s*import\s/m.test(stripped) || /^\s*export\s/m.test(stripped))) {
+    errors.push('Do not use import/export in the backend. Use module.exports = ... and require().')
   }
   if (
     kind !== 'backend' &&
@@ -75,9 +76,13 @@ function checkFile(kind: FileKind, code: string | undefined): FileCheck {
     errors.push(`Syntax error: ${e instanceof Error ? e.message : String(e)}`)
   }
 
-  if (!/module\.exports\s*=/.test(stripped) && !/exports\.default\s*=/.test(stripped)) {
+  if (
+    !/module\.exports\s*=/.test(stripped) &&
+    !/exports\.default\s*=/.test(stripped) &&
+    !(kind !== 'backend' && /^\s*export\s+default\s/m.test(stripped))
+  ) {
     errors.push(
-      'module.exports must be assigned, e.g. module.exports = function MyApp({ ctx }) { ... }',
+      'module.exports must be assigned, e.g. module.exports = function MyApp({ ctx }) { ... } (or export default function MyApp({ ctx }) { ... })',
     )
   } else if (/module\.exports\s*=\s*(['"`]|[-+]?\d|null\b|true\b|false\b)/.test(stripped)) {
     errors.push('module.exports must be a function, not a primitive.')

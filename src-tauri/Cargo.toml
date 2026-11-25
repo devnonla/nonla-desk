@@ -5,7 +5,7 @@ description = "Developer utilities desktop app for macOS"
 authors = ["devnonla"]
 license = "MIT"
 edition = "2021"
-rust-version = "1.80"
+rust-version = "1.89"
 
 [lib]
 name = "nonla_desk_lib"
@@ -32,6 +32,7 @@ dirs = "5"
 rand = "0.8"
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
+resvg = { version = "0.45", default-features = false }
 
 [profile.release]
 codegen-units = 1

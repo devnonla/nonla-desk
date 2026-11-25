@@ -57,6 +57,12 @@ export const Upload = drawn(
     <path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15" />
   </>,
 )
+export const ExternalLink = drawn(
+  <>
+    <path d="M14 4h6v6M20 4l-9 9" />
+    <path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" />
+  </>,
+)
 export const Power = drawn(
   <>
     <path d="M12 3v8" />

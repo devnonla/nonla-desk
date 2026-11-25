@@ -7,4 +7,6 @@ export interface AppItem {
   iconSvg?: string | null
   version: string
   enabled: boolean
+  /** Installed as its own macOS app: opening it launches that app. */
+  standalone?: boolean
 }

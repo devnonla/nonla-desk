@@ -35,6 +35,9 @@ struct Instance {
     kill: Option<oneshot::Sender<()>>,
     exited: watch::Receiver<bool>,
     stopping: Arc<AtomicBool>,
+    /// Held while the backend runs: one process at a time (the desktop or the
+    /// app's standalone bundle) owns an app's backend.
+    _lock: Option<std::fs::File>,
 }
 
 static INSTANCES: LazyLock<Mutex<HashMap<String, Instance>>> = LazyLock::new(Default::default);
@@ -106,7 +109,7 @@ pub fn is_running(app_id: &str) -> bool {
         .unwrap_or(false)
 }
 
-fn runner_path(app: &AppHandle) -> PathBuf {
+pub fn runner_path(app: &AppHandle) -> PathBuf {
     let source = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources/sandbox-runner.cjs");
     if paths::IS_DEV && source.exists() {
         return source;
@@ -116,6 +119,45 @@ fn runner_path(app: &AppHandle) -> PathBuf {
         .ok()
         .filter(|p| p.exists())
         .unwrap_or(source)
+}
+
+// ─── Ownership lock ──────────────────────────────────────────────────────────
+
+/// Set in a standalone app: wait for the desktop to hand the backend over.
+static WAIT_FOR_LOCK: AtomicBool = AtomicBool::new(false);
+
+pub fn wait_for_lock() {
+    WAIT_FOR_LOCK.store(true, Ordering::SeqCst);
+}
+
+/// None when another process owns this app's backend.
+async fn acquire_lock(app_id: &str) -> Option<std::fs::File> {
+    let dir = paths::root_dir().join("run");
+    let _ = std::fs::create_dir_all(&dir);
+    let file = std::fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .open(dir.join(format!("{app_id}.lock")))
+        .ok()?;
+    let tries = if WAIT_FOR_LOCK.load(Ordering::SeqCst) {
+        40
+    } else {
+        1
+    };
+    for i in 0..tries {
+        match file.try_lock() {
+            Ok(()) => return Some(file),
+            Err(std::fs::TryLockError::WouldBlock) => {
+                if i + 1 < tries {
+                    tokio::time::sleep(Duration::from_millis(200)).await;
+                }
+            }
+            // The filesystem has no locks: run without one.
+            Err(std::fs::TryLockError::Error(_)) => return Some(file),
+        }
+    }
+    None
 }
 
 /// Start the backend for `rec` if it has one. Stops a running instance first.
@@ -133,6 +175,17 @@ pub async fn start(app: &AppHandle, rec: &MiniApp) -> Result<(), String> {
         push_log(app, &id, &rec.name, "error", &msg);
         let _ = app.emit("runtime:missing", json!({ "appId": id }));
         return Err(msg);
+    };
+
+    let Some(lock) = acquire_lock(&id).await else {
+        push_log(
+            app,
+            &id,
+            &rec.name,
+            "system",
+            "Backend is owned by another Nonla process (the standalone app); not starting it here",
+        );
+        return Ok(());
     };
 
     let dir = paths::app_dir(&id);
@@ -269,6 +322,7 @@ pub async fn start(app: &AppHandle, rec: &MiniApp) -> Result<(), String> {
                 kill: Some(kill_tx),
                 exited: exit_rx,
                 stopping,
+                _lock: Some(lock),
             },
         );
     }

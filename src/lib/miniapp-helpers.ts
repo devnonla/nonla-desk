@@ -2,6 +2,7 @@ import React from 'react'
 import { transform } from 'sucrase'
 import { api } from '@/lib/api'
 import * as MiniAppUIComponents from '../components/ui/MiniAppUI'
+import { loadModules } from './miniapp-modules'
 
 // ─── JSX pragma (used internally by Sucrase transpiler, NOT exposed to mini apps) ──
 
@@ -103,12 +104,17 @@ export function transpileCode(code: string): string {
   return out
 }
 
+/** `import … from`, `import 'x'` or `export` at the start of a line. */
+const MODULE_SYNTAX = /^\s*(?:import\s*[\w{*'"]|export\s)/m
+
 function transpileUncached(code: string): string {
+  const modules = MODULE_SYNTAX.test(code)
   // Detect JSX syntax: look for <Component or <tag patterns
-  if (/<[A-Za-z]/.test(code)) {
+  if (modules || /<[A-Za-z]/.test(code)) {
     try {
       const result = transform(code, {
-        transforms: ['jsx'],
+        // `imports` turns import/export into require()/exports, served by loadModules.
+        transforms: modules ? ['jsx', 'imports'] : ['jsx'],
         jsxPragma: '__jsx',
         jsxFragmentPragma: 'React.Fragment',
         production: true,
@@ -125,9 +131,16 @@ function transpileUncached(code: string): string {
 
 // ─── Evaluate mini app code and return component ─────────────────────────────
 
+/** Load the libraries a frontend/panel imports, ready for `evaluateComponent`. */
+export function loadModulesFor(code: string): Promise<Record<string, unknown>> {
+  if (!code || code.trim() === '') return Promise.resolve({})
+  return loadModules(transpileCode(code))
+}
+
 export function evaluateComponent(
   code: string,
   ctx: ReturnType<typeof buildFrontendContext>,
+  modules: Record<string, unknown> = {},
 ): React.ComponentType<any> | null {
   if (!code || code.trim() === '') return null
 
@@ -137,13 +150,21 @@ export function evaluateComponent(
 
     const transpiledCode = transpileCode(code)
     const moduleObj = { exports: {} as any }
-    const wrappedCode = `(function(module, exports, ctx, __jsx, React) { ${transpiledCode} \n})`
+    const wrappedCode = `(function(module, exports, ctx, __jsx, React, require) { ${transpiledCode} \n})`
     const fn = new Function(`return ${wrappedCode}`)()
-    fn(moduleObj, moduleObj.exports, ctx, __jsx, React)
+    const req = (name: string) => {
+      if (name in modules) return modules[name]
+      throw new Error(`Cannot find module "${name}"`)
+    }
+    fn(moduleObj, moduleObj.exports, ctx, __jsx, React, req)
 
     const component = moduleObj.exports
     if (typeof component === 'function') {
       return component
+    }
+    // `export default function …`
+    if (typeof component?.default === 'function') {
+      return component.default
     }
     return null
   } catch (e) {

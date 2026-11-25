@@ -1,6 +1,6 @@
 import type React from 'react'
 import { useState } from 'react'
-import { AppWindow, Download, Pencil, Power, Trash2 } from '@/components/ui/icons'
+import { AppWindow, Download, ExternalLink, Pencil, Power, Trash2, X } from '@/components/ui/icons'
 import { ContextMenu } from '../ui/ContextMenu'
 import { AppIcon } from './AppIcon'
 import type { AppItem } from './types'
@@ -9,6 +9,8 @@ interface DesktopIconProps {
   app: AppItem
   active?: boolean
   onOpen: () => void
+  onInstallNative: () => void
+  onRemoveNative: () => void
   onEdit: () => void
   onExport: () => void
   onToggle: () => void
@@ -37,6 +39,8 @@ export function DesktopIcon({
   app,
   active = false,
   onOpen,
+  onInstallNative,
+  onRemoveNative,
   onEdit,
   onExport,
   onToggle,
@@ -54,8 +58,8 @@ export function DesktopIcon({
     <>
       <button
         type="button"
-        title={app.name}
-        aria-label={app.name}
+        title={app.standalone ? `${app.name} (native app)` : app.name}
+        aria-label={app.standalone ? `${app.name}, native app` : app.name}
         data-app-id={app.id}
         aria-current={active ? 'true' : undefined}
         aria-haspopup="menu"
@@ -68,6 +72,14 @@ export function DesktopIcon({
           <span className={app.enabled ? '' : 'opacity-45 grayscale'}>
             <AppIcon name={app.icon} svg={app.iconSvg} size={app.iconSvg ? 48 : 28} />
           </span>
+          {app.standalone && (
+            <span
+              aria-hidden
+              className="absolute -right-1 -bottom-1 flex size-4.5 items-center justify-center rounded-full bg-white text-(--color-ink) shadow-[0_1px_3px_rgba(0,0,0,0.35)]"
+            >
+              <ExternalLink size={10} />
+            </span>
+          )}
         </span>
         <span className={labelClass(!app.enabled)}>{app.name}</span>
       </button>
@@ -85,6 +97,23 @@ export function DesktopIcon({
             icon: <AppWindow size={14} />,
             onSelect: onOpen,
           },
+          ...(app.standalone
+            ? [
+                {
+                  key: 'remove-native',
+                  label: 'Remove Native App',
+                  icon: <X size={14} />,
+                  onSelect: onRemoveNative,
+                },
+              ]
+            : [
+                {
+                  key: 'install-native',
+                  label: 'Install as Native App',
+                  icon: <Download size={14} />,
+                  onSelect: onInstallNative,
+                },
+              ]),
           { type: 'separator', key: 's1' },
           {
             key: 'details',

@@ -12,7 +12,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{UnixListener, UnixStream};
 
 use crate::miniapp::{self, CreateInput, FileKind, UpdateInput};
-use crate::{backend, check, ops, paths, runtime, shell};
+use crate::{backend, bundle, check, ops, paths, runtime, shell};
 
 #[derive(Deserialize)]
 struct Request {
@@ -84,22 +84,23 @@ fn summary(rec: &miniapp::MiniApp) -> Value {
     let mut v = miniapp::list_item(rec);
     v["running"] = backend::is_running(&rec.id).into();
     v["paths"] = serde_json::to_value(miniapp::code_paths(&rec.id)).unwrap_or(Value::Null);
+    v["standalone"] = bundle::find_installed(&rec.id)
+        .map(|p| Value::from(p.display().to_string()))
+        .unwrap_or(Value::Null);
     v
 }
 
-const STARTER_FRONTEND: &str = r#"module.exports = function App({ ctx }) {
-  const { Space, Typography, Button } = ctx.ui
+const STARTER_FRONTEND: &str = r#"// Use any library: import { Button } from 'antd' (see `nonla guide`, "Libraries").
+module.exports = function App({ ctx }) {
   const [count, setCount] = ctx.useState(0)
 
   return (
-    <div className="p-6">
-      <Space direction="vertical" size={16}>
-        <Typography.Title level={4}>Hello from a new mini app</Typography.Title>
-        <Typography.Text>Edit frontend/index.jsx, then run `nonla reload`.</Typography.Text>
-        <Button type="primary" onClick={() => setCount(count + 1)}>
-          Clicked {count} times
-        </Button>
-      </Space>
+    <div style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>
+      <h2 style={{ margin: '0 0 8px' }}>Hello from a new mini app</h2>
+      <p style={{ margin: '0 0 16px' }}>Edit frontend/index.jsx, then run `nonla reload`.</p>
+      <button type="button" onClick={() => setCount(count + 1)}>
+        Clicked {count} times
+      </button>
     </div>
   )
 }
@@ -212,6 +213,33 @@ async fn dispatch(app: &AppHandle, cmd: &str, args: &Value) -> Result<Value, Str
             Ok(summary(&rec))
         }
 
+        "install" => {
+            let rec = miniapp::resolve(&req(args, "app")?)?;
+            let (a, id) = (app.clone(), rec.id.clone());
+            let path = tauri::async_runtime::spawn_blocking(move || bundle::install(&a, &id))
+                .await
+                .map_err(|e| e.to_string())??;
+            ops::broadcast(app, ops::ChangeEvent::metadata(&rec.id));
+            if args.get("open").and_then(Value::as_bool).unwrap_or(false) {
+                bundle::open(&rec.id)?;
+            }
+            Ok(json!({ "id": rec.id, "name": rec.name, "path": path }))
+        }
+
+        "uninstall" => {
+            let rec = miniapp::resolve(&req(args, "app")?)?;
+            let path = bundle::uninstall(&rec.id)?;
+            ops::broadcast(app, ops::ChangeEvent::metadata(&rec.id));
+            Ok(json!({ "id": rec.id, "name": rec.name, "removed": path }))
+        }
+
+        // A standalone app asks the desktop to give up this app's backend.
+        "release" => {
+            let id = req(args, "app")?;
+            backend::stop(&id).await;
+            Ok(json!({ "id": id }))
+        }
+
         "check" => {
             let mut files = serde_json::Map::new();
             let mut name = Value::Null;
@@ -272,7 +300,15 @@ async fn dispatch(app: &AppHandle, cmd: &str, args: &Value) -> Result<Value, Str
 
         "open" => {
             let route = match opt(args, "app") {
-                Some(a) => format!("mini/{}", miniapp::resolve(&a)?.id),
+                Some(a) => {
+                    let rec = miniapp::resolve(&a)?;
+                    // Installed as a native app: that is where it opens.
+                    if rec.enabled && bundle::find_installed(&rec.id).is_some() {
+                        bundle::open(&rec.id)?;
+                        return Ok(json!({ "native": true }));
+                    }
+                    format!("mini/{}", rec.id)
+                }
                 None => String::new(),
             };
             shell::navigate(app, &route);

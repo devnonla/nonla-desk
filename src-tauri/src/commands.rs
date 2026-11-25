@@ -9,7 +9,7 @@ use tokio::sync::oneshot;
 use crate::backend::{self, LogEntry};
 use crate::miniapp::{self, CreateInput, UpdateInput};
 use crate::ops::{self, EnableResult};
-use crate::{check, shell};
+use crate::{bundle, check, shell, solo};
 
 #[tauri::command]
 pub fn app_version(app: AppHandle) -> String {
@@ -18,7 +18,15 @@ pub fn app_version(app: AppHandle) -> String {
 
 #[tauri::command]
 pub fn list_mini_apps() -> Result<Vec<Value>, String> {
-    Ok(miniapp::list()?.iter().map(miniapp::list_item).collect())
+    let native = bundle::installed_ids();
+    Ok(miniapp::list()?
+        .iter()
+        .map(|a| {
+            let mut v = miniapp::list_item(a);
+            v["standalone"] = native.contains(&a.id).into();
+            v
+        })
+        .collect())
 }
 
 #[tauri::command]
@@ -143,6 +151,10 @@ pub fn hide_tray(app: AppHandle) {
 
 #[tauri::command]
 pub fn open_main(app: AppHandle, route: Option<String>) {
+    if solo::app_id().is_some() {
+        solo::show(&app);
+        return;
+    }
     shell::navigate(&app, route.as_deref().unwrap_or(""));
 }
 
@@ -155,4 +167,42 @@ pub fn ui_ready() -> Vec<String> {
 #[tauri::command]
 pub fn check_result(request_id: String, result: Value) {
     check::resolve(&request_id, result);
+}
+
+// ─── Standalone apps ─────────────────────────────────────────────────────────
+
+/// The mini app this process is when it runs as an installed standalone app.
+#[tauri::command]
+pub fn solo_app_id() -> Option<String> {
+    solo::app_id()
+}
+
+/// Where the app is installed as its own macOS app, if it is.
+#[tauri::command]
+pub fn standalone_path(id: String) -> Option<String> {
+    bundle::find_installed(&id).map(|p| p.display().to_string())
+}
+
+#[tauri::command]
+pub async fn install_standalone(app: AppHandle, id: String) -> Result<String, String> {
+    let (handle, id_for_event) = (app.clone(), id.clone());
+    tauri::async_runtime::spawn_blocking(move || bundle::install(&app, &id))
+        .await
+        .map_err(|e| e.to_string())?
+        .map(|p| {
+            ops::broadcast(&handle, ops::ChangeEvent::metadata(&id_for_event));
+            p.display().to_string()
+        })
+}
+
+#[tauri::command]
+pub fn uninstall_standalone(app: AppHandle, id: String) -> Result<bool, String> {
+    let removed = bundle::uninstall(&id)?.is_some();
+    ops::broadcast(&app, ops::ChangeEvent::metadata(&id));
+    Ok(removed)
+}
+
+#[tauri::command]
+pub fn open_standalone(id: String) -> Result<(), String> {
+    bundle::open(&id)
 }

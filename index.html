@@ -6,6 +6,18 @@
     <meta name="description" content="Nonla Desk - Developer utilities desktop app for macOS" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <title>Nonla Desk</title>
+    <!-- Mini apps import libraries from a CDN; they must share the desktop's React. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "/vendor/react.js",
+          "react/jsx-runtime": "/vendor/jsx-runtime.js",
+          "react/jsx-dev-runtime": "/vendor/jsx-runtime.js",
+          "react-dom": "/vendor/react-dom.js",
+          "react-dom/client": "/vendor/react-dom-client.js"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

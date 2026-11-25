@@ -153,7 +153,7 @@ fn create_menu(app: &AppHandle) -> tauri::Result<()> {
 /// that caused it, so it should not re-open the panel.
 static LAST_BLUR: Mutex<Option<Instant>> = Mutex::new(None);
 
-fn create_tray_panel(app: &AppHandle) -> tauri::Result<WebviewWindow> {
+pub fn create_tray_panel(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let win = WebviewWindowBuilder::new(app, TRAY, WebviewUrl::App("index.html".into()))
         .title("Nonla Desk Panel")
         .inner_size(380.0, 520.0)
@@ -196,7 +196,7 @@ pub fn hide_tray_panel(app: &AppHandle) {
     }
 }
 
-fn toggle_tray_panel(app: &AppHandle, rect: Rect) {
+pub fn toggle_tray_panel(app: &AppHandle, rect: Rect) {
     let Some(w) = app.get_webview_window(TRAY) else {
         return;
     };

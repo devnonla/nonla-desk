@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, LayoutGrid } from '@/components/ui/icons'
 import { api } from '@/lib/api'
 import { useMiniAppChanges } from '../../hooks/useMiniAppChanges'
-import { buildFrontendContext, evaluateComponent } from '../../lib/miniapp-helpers'
+import { buildFrontendContext, evaluateComponent, loadModulesFor } from '../../lib/miniapp-helpers'
 import { AppIcon } from '../desktop/AppIcon'
 import AppLogo from '../ui/AppLogo'
 
@@ -15,17 +15,25 @@ function MiniAppPanelView({ appId, panelCode }: { appId: string; panelCode: stri
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    try {
-      const ctx = buildFrontendContext(appId)
-      ctxRef.current = ctx
-      const Comp = evaluateComponent(panelCode, ctx)
-      if (Comp) {
-        setPanelComp(() => Comp)
-      } else {
-        setError('Panel returned no component')
+    let cancelled = false
+    ;(async () => {
+      try {
+        const modules = await loadModulesFor(panelCode)
+        if (cancelled) return
+        const ctx = buildFrontendContext(appId)
+        ctxRef.current = ctx
+        const Comp = evaluateComponent(panelCode, ctx, modules)
+        if (Comp) {
+          setPanelComp(() => Comp)
+        } else {
+          setError('Panel returned no component')
+        }
+      } catch (e: any) {
+        if (!cancelled) setError(e.message || 'Failed to load panel')
       }
-    } catch (e: any) {
-      setError(e.message || 'Failed to load panel')
+    })()
+    return () => {
+      cancelled = true
     }
   }, [appId, panelCode])
 
@@ -61,13 +69,25 @@ interface MiniAppPanelInfo {
 export default function TrayPanel() {
   const [activeTool, setActiveTool] = useState<string | null>(null)
   const [miniAppPanels, setMiniAppPanels] = useState<MiniAppPanelInfo[]>([])
+  // Inside a native app's own menu bar icon: its panel only. undefined = not known yet.
+  const [soloId, setSoloId] = useState<string | null | undefined>(undefined)
+
+  useEffect(() => {
+    void api.soloAppId().then(setSoloId)
+  }, [])
 
   // Load mini apps with panel code
   const loadPanels = useCallback(async () => {
+    if (soloId === undefined) return
     try {
       const list = await api.listMiniApps()
       if (!list) return
-      const withPanels = list.filter((a: any) => a.enabled && a.hasPanel)
+      // Apps installed as native apps show their panel in their own menu bar icon.
+      const withPanels = list.filter((a: any) =>
+        soloId
+          ? a.id === soloId && a.enabled && a.hasPanel
+          : a.enabled && a.hasPanel && !a.standalone,
+      )
       if (withPanels.length === 0) {
         setMiniAppPanels([])
         return
@@ -88,15 +108,20 @@ export default function TrayPanel() {
     } catch {
       // silently fail
     }
-  }, [])
+  }, [soloId])
 
   useEffect(() => {
     loadPanels()
   }, [loadPanels])
 
+  // A native app has one panel: show it straight away.
+  useEffect(() => {
+    if (soloId && miniAppPanels.some((a) => a.id === soloId)) setActiveTool(soloId)
+  }, [soloId, miniAppPanels])
+
   useMiniAppChanges((event) => {
     void loadPanels()
-    if (!activeTool) return
+    if (!activeTool || soloId) return
     if (event.id === activeTool && (event.action === 'deleted' || event.enabled === false)) {
       setActiveTool(null)
     }
@@ -140,7 +165,12 @@ export default function TrayPanel() {
       <div className="flex-1 w-full bg-(--color-canvas) rounded-xl border border-(--color-hairline) overflow-hidden flex flex-col">
         {/* Header */}
         <div className="py-2.5 px-3 border-b border-(--color-hairline) flex items-center">
-          {activeTool ? (
+          {soloId ? (
+            <div className="flex items-center gap-2 text-[13px] font-semibold text-(--color-ink) select-none">
+              {allTools[0]?.icon}
+              <span>{activeLabel}</span>
+            </div>
+          ) : activeTool ? (
             <div
               className="flex items-center gap-1.5 text-[13px] font-semibold text-(--color-ink) cursor-pointer transition-colors duration-150 select-none hover:text-(--color-primary-deep)"
               onClick={() => setActiveTool(null)}

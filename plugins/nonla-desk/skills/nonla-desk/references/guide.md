@@ -56,7 +56,7 @@ App **name is unique**. `nonla create` with a name that already exists **fails**
 7. Backend problems: `nonla logs <app>` prints recent `ctx.log`, stdout/stderr, and crashes. A backend that exits with an error is disabled automatically.
 8. `nonla open <app>` shows the app in Nonla Desk so the user can see it.
 
-Other commands: `nonla get <app> [--file frontend|backend|panel]`, `nonla update <app> --name/--description/--icon-file/--category/--version` (metadata only), `nonla disable <app>`, `nonla delete <app> --yes`, `nonla import <zip|dir>`, `nonla export <app> -o out.zip`, `nonla status`, `nonla guide`.
+Other commands: `nonla get <app> [--file frontend|backend|panel]`, `nonla update <app> --name/--description/--icon-file/--category/--version` (metadata only), `nonla disable <app>`, `nonla delete <app> --yes`, `nonla import <zip|dir>`, `nonla export <app> -o out.zip`, `nonla install <app> [--open]` (own macOS app in ~/Applications/Nonla Apps, own Dock icon and window; edits made with the CLI show up in it live), `nonla uninstall <app>`, `nonla status`, `nonla guide`.
 
 ```bash
 nonla create "Password Generator" --frontend /tmp/pw/frontend.jsx --backend /tmp/pw/backend.js --icon-file /tmp/pw/icon.svg --category "Dev Tools"
@@ -95,7 +95,13 @@ Keep the glyph inside x/y 10–38, strokes 2.5–3.5 wide, one or two accent col
 
 ---
 
-## ⚠️ Spacing is not optional (CRITICAL)
+## Choose your UI
+
+The UI of an app is yours to pick. Use any library with `import` (antd, shadcn-style components, Mantine, plain HTML and CSS…); see "Libraries" under Frontend Code. The desktop does not require, or prefer, a component set.
+
+`ctx.ui` (the devnonla-ui components) is still there, so the apps already on the desktop keep working, and you can use it when you want. **Everything from here to "Frontend Code", and the "UI Component Library", "Styling" and "Complete Example" sections, is only about `ctx.ui`.** If your app uses another library, skip them and follow that library's own rules.
+
+## Spacing with `ctx.ui` (when you use it)
 
 The host CSS resets **all** padding and margin (`* { margin: 0; padding: 0 }`).
 The parent window has **no padding** and `overflow: hidden`.
@@ -210,6 +216,28 @@ ctx.notify(title, body?, opts?)
 ctx.tray.hide()                 // Dismiss the tray popup (e.g. before an eyedropper)
 ```
 
+### Libraries
+
+A frontend or panel can `import` any npm package or https URL; the desktop fetches it from the network (esm.sh) before the app runs, so the app needs a connection the first time (the webview caches it after). Use this when `ctx.ui` is not what you want, for example antd instead of devnonla-ui:
+
+```jsx
+import { Button, DatePicker } from 'antd'
+import 'antd/dist/reset.css'          // CSS files become a <link>
+import dayjs from 'dayjs@1'           // pin a version with @
+import confetti from 'https://esm.sh/canvas-confetti'
+
+export default function MyApp({ ctx }) {
+  return <Button type="primary" onClick={() => confetti()}>{dayjs().format('YYYY-MM-DD')}</Button>
+}
+```
+
+- `react`, `react-dom` and the JSX runtime are the desktop's own copy, so a library's hooks work with `ctx.useState`. Do not import a second React.
+- A bare name like `antd` loads `https://esm.sh/antd` as one bundled file with React shared. Add your own query (`antd?bundle=false`) to change that.
+- The first run fetches the library and pins the exact version it resolved (`antd` → `antd@6.7.2`); later runs reuse that file from the webview cache and do not go back to the network, even offline. A new version only arrives when you ask for one (`antd@7`). Write the version yourself (`antd@6.7.2`) to make an app independent of what was pinned on this machine.
+- Relative imports (`./x`) are not supported: keep the app in one file.
+- Tailwind classes still only work when they are in the desktop's safelist. For a library's own look use its CSS; for your own layout use inline `style` or safelisted classes.
+- You can mix libraries with `ctx.ui` and `ctx.ipc` in the same app. `nonla check` does not fetch libraries: open the app (`nonla open <app>`) to see load errors.
+
 ### Icons
 
 There is no icon pack (`ctx.icons` was removed and fails with an error). Two options:
@@ -241,10 +269,10 @@ Helpers like `KeyIcon` go above `module.exports` (JSX works there too).
 **Code runs in a Function constructor inside the app's WebKit webview (Safari engine).**
 **JSX is auto-transpiled by Sucrase at runtime — use JSX syntax directly.**
 
-1. **Use `module.exports = function`** — no import/export
+1. **Export the component** with `module.exports = function MyApp({ ctx }) {…}` or `export default function MyApp({ ctx }) {…}`
 2. **Write JSX directly** — `<div className="p-6">` works out of the box (auto-transpiled)
 3. **Modern JS OK** — `const`/`let`, arrow functions, `async/await`, `?.`, `??`, spread `{...obj}` all work fine
-4. **No `import`/`export`** — this is the only real restriction
+4. **`import` any library you like** (see "Libraries" below). Backends stay CommonJS (`require`)
 5. **Do NOT use `ctx.h()` or `React.createElement()`** — always write JSX
 
 ```javascript
@@ -262,9 +290,8 @@ module.exports = function MyApp({ ctx }) {
   return (<div className="h-full overflow-y-auto p-6 text-sm text-(--color-ink)">{items.length} items</div>)
 }
 
-// ❌ WRONG — no import/export
-import React from 'react'
-export default ({ ctx }) => { ... }
+// ❌ WRONG — a second React: use ctx.useState / the shared 'react' import, never your own copy
+import React from 'https://esm.sh/react'
 
 // ❌ WRONG — do NOT use ctx.h() or React.createElement()
 return ctx.h('div', { className: 'p-6' }, items.length, ' items')
@@ -389,7 +416,7 @@ module.exports = function MyPanel({ ctx }) {
 
 ---
 
-## UI Component Library (ctx.ui)
+## UI Component Library (ctx.ui, optional)
 
 All accessed via `ctx.ui.*`. Available components:
 
@@ -434,7 +461,7 @@ All accessed via `ctx.ui.*`. Available components:
 
 ---
 
-## Styling — compiled tokens only
+## Styling with `ctx.ui` — compiled tokens only
 
 **Never hardcode hex colors. Never invent Tailwind classes.**
 
@@ -490,7 +517,7 @@ Do not rebuild buttons/inputs/cards with raw `<button>` / `<input>` unless you n
 
 ---
 
-## Complete Example: Todo App
+## Complete Example: Todo App (with `ctx.ui`)
 
 ### frontendCode
 
@@ -640,8 +667,8 @@ module.exports = function TodoPanel({ ctx }) {
 - [ ] Cards/buttons/inputs come from `ctx.ui`, not raw unpadded divs.
 - [ ] Colors use `text-(--color-ink)` form, **not** `text-[var(--color-ink)]`
 - [ ] No invented Tailwind (`gap-7`, `p-[18px]`, dark-theme hover borders)
-- [ ] `module.exports = function` pattern
-- [ ] No import/export
+- [ ] The component is exported with `module.exports = function` or `export default function`
+- [ ] Libraries come from `import` (npm name or https URL); the backend uses `require`, never `import`
 - [ ] **JSX syntax only** — do NOT use ctx.h() or React.createElement()
 - [ ] IPC cleanup in useEffect return
 - [ ] Backend is async (`await ctx.storage.*`) and returns a cleanup function

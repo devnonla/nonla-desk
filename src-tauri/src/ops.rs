@@ -5,8 +5,8 @@ use serde::Serialize;
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter};
 
-use crate::backend;
 use crate::miniapp::{self, CreateInput, FileKind, ImportResult, MiniApp, UpdateInput};
+use crate::{backend, bundle};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -22,6 +22,17 @@ pub struct ChangeEvent {
 }
 
 impl ChangeEvent {
+    /// The app's list row changed (for example it was installed as a native app).
+    pub fn metadata(id: &str) -> Self {
+        Self {
+            action: "updated",
+            id: id.into(),
+            enabled: None,
+            code_changed: None,
+            metadata_changed: Some(true),
+        }
+    }
+
     pub fn enabled(id: &str, enabled: bool) -> Self {
         Self {
             action: "updated",
@@ -43,6 +54,14 @@ fn spawn_start(app: &AppHandle, rec: MiniApp) {
     tauri::async_runtime::spawn(async move {
         let _ = backend::start(&app, &rec).await;
     });
+}
+
+/// Rebuild the app's standalone bundle (name or icon changed), if it has one.
+fn refresh_standalone(app: &AppHandle, id: &str) {
+    if bundle::find_installed(id).is_some() {
+        let (app, id) = (app.clone(), id.to_string());
+        tauri::async_runtime::spawn_blocking(move || bundle::refresh(&app, &id));
+    }
 }
 
 pub async fn load_all(app: &AppHandle) {
@@ -80,6 +99,9 @@ pub async fn update(app: &AppHandle, id: &str, input: UpdateInput) -> Result<Min
             spawn_start(app, rec.clone());
         }
     }
+    if input.metadata_changed() {
+        refresh_standalone(app, id);
+    }
     broadcast(
         app,
         ChangeEvent {
@@ -115,6 +137,7 @@ pub async fn delete(app: &AppHandle, id: &str) -> Result<bool, String> {
     backend::stop(id).await;
     let deleted = miniapp::delete(id)?;
     if deleted {
+        let _ = bundle::uninstall(id);
         broadcast(
             app,
             ChangeEvent {

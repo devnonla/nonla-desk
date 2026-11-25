@@ -31,6 +31,7 @@ Nonla Desk is a macOS app that hosts **mini apps**. You create and change them w
 | Backend output, crashes | `nonla logs <app> [-n 200]` |
 | Show the user | `nonla open <app>` |
 | Share | `nonla export <app> -o x.zip`, `nonla import <zip\|dir>` |
+| Standalone app | `nonla install <app> [--open]`, `nonla uninstall <app>` |
 | Remove | `nonla delete <app> --yes` (ask the user first) |
 
 Exit codes: 0 ok, 1 error (message on stderr), 2 `check` found problems.
@@ -40,7 +41,7 @@ Exit codes: 0 ok, 1 error (message on stderr), 2 `check` found problems.
 - `nonla list` first. App names are unique: never create "Todo 2" or a copy to iterate. Edit the existing app.
 - Edit an existing app's files in place (paths from `nonla path`), then `nonla check <app>` and `nonla reload <app>`.
 - New app: write the files in a temp folder, `nonla check --frontend … --icon-file …`, then `nonla create … --enable`.
-- Icons inside an app: `<ui.Icon name="copy" />` (devnonla-ui glyphs, list in the guide) or your own inline `<svg>`. There is no icon pack; `ctx.icons` fails.
+- UI: an app may `import` any library (antd, dayjs…; see "Libraries" in the guide). The built-in `ctx.ui` (devnonla-ui) is optional and only kept for existing apps. There is no icon pack; `ctx.icons` fails.
 - Every app gets an SVG icon (`--icon-file icon.svg`) that says what it does. Read the Icon section of the guide for the rules; the call fails with the reason if the SVG is not allowed.
 - After a change: `nonla logs <app>` to confirm the backend started (`Backend ready`) and had no errors, then `nonla open <app>` so the user sees it.
 - A backend that exits with an error disables its app. Fix the code, then `nonla enable <app>`.

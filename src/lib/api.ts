@@ -148,6 +148,21 @@ export const api = {
   exportMiniApp: (id: string) =>
     attempt(async () => ({ path: await invoke<string | null>('export_mini_app', { id }) })),
 
+  // Standalone apps: a mini app installed as its own macOS app
+  /** The mini app this window is, when it runs as an installed standalone app. */
+  soloAppId: () => invoke<string | null>('solo_app_id'),
+  /** Where the app is installed as its own macOS app; null when it is not. */
+  standalonePath: (id: string) => invoke<string | null>('standalone_path', { id }),
+  installStandalone: (id: string) =>
+    attempt(async () => ({ path: await invoke<string>('install_standalone', { id }) })),
+  uninstallStandalone: (id: string) =>
+    attempt(async () => ({ removed: await invoke<boolean>('uninstall_standalone', { id }) })),
+  openStandalone: (id: string) =>
+    attempt(async () => {
+      await invoke('open_standalone', { id })
+      return {}
+    }),
+
   // Frontend ↔ backend messaging
   sendMiniAppIpc: (appId: string, channel: string, data: unknown) =>
     invoke<boolean>('send_mini_app_ipc', { appId, channel, data: data ?? null }),

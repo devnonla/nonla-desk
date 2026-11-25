@@ -43,7 +43,33 @@ export default function Dashboard({ apps, loading, loadApps }: DashboardProps) {
   const noOpenWindows = windows.length === 0
 
   const openApp = (app: AppItem) => {
+    if (app.enabled && app.standalone) {
+      void api.openStandalone(app.id).then((r) => {
+        if (!r.success) toast.error(r.error)
+      })
+      return
+    }
     open(app.enabled ? 'app' : 'info', app.id)
+  }
+
+  const handleInstallNative = async (app: AppItem) => {
+    toast.info(`Adding "${app.name}" to Applications…`)
+    const r = await api.installStandalone(app.id)
+    if (!r.success) {
+      toast.error(r.error)
+      return
+    }
+    loadApps()
+    toast.success(`"${app.name}" is now a native app`)
+    if (app.enabled) await api.openStandalone(app.id)
+  }
+
+  const handleRemoveNative = async (app: AppItem) => {
+    const r = await api.uninstallStandalone(app.id)
+    if (r.success) {
+      loadApps()
+      toast.success(`Removed native app "${app.name}"`)
+    } else toast.error(r.error)
   }
 
   const handleDelete = (id: string, name: string) => {
@@ -155,6 +181,8 @@ export default function Dashboard({ apps, loading, loadApps }: DashboardProps) {
       app={app}
       active={activeMiniId === app.id}
       onOpen={() => openApp(app)}
+      onInstallNative={() => handleInstallNative(app)}
+      onRemoveNative={() => handleRemoveNative(app)}
       onEdit={() => open('info', app.id)}
       onExport={() => handleExport(app.id)}
       onToggle={() => handleToggle(app.id)}

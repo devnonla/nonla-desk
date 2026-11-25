@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { AlertCircle, AlertTriangle, Box, ShieldOff } from '@/components/ui/icons'
 import { api } from '@/lib/api'
 import { useMiniAppChanges } from '../../hooks/useMiniAppChanges'
-import { buildFrontendContext, evaluateComponent } from '../../lib/miniapp-helpers'
+import { buildFrontendContext, evaluateComponent, loadModulesFor } from '../../lib/miniapp-helpers'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -148,7 +148,7 @@ export default function MiniAppRenderer({ appId }: MiniAppRendererProps) {
 
     api
       .getMiniApp(appId)
-      .then((data: any) => {
+      .then(async (data: any) => {
         if (cancelled) return
         if (!data) {
           setError('Mini app not found')
@@ -164,11 +164,15 @@ export default function MiniAppRenderer({ appId }: MiniAppRendererProps) {
           return
         }
 
+        // Libraries the app imports (antd, dayjs…) are fetched before it runs.
+        const modules = await loadModulesFor(data.frontendCode)
+        if (cancelled) return
+
         const ctx = buildFrontendContext(appId)
         ctxRef.current = ctx
 
         // The panel only runs in the tray window; the app window needs the frontend.
-        componentRef.current = evaluateComponent(data.frontendCode, ctx)
+        componentRef.current = evaluateComponent(data.frontendCode, ctx, modules)
 
         setLoading(false)
       })

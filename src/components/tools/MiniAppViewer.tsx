@@ -194,10 +194,13 @@ export default function MiniAppViewer({ appId }: { appId: string }) {
   const [schema, setSchema] = useState<Record<string, ConfigField> | null>(null)
   const [tab, setTab] = useState('frontend')
   const [toggling, setToggling] = useState(false)
+  const [standalone, setStandalone] = useState<string | null>(null)
+  const [installing, setInstalling] = useState(false)
 
   const load = async () => {
     const detail = await api.getMiniApp(appId)
     setApp(detail)
+    setStandalone(await api.standalonePath(appId))
     const config = await api.getMiniAppConfig(appId)
     setSchema(
       config.success && config.schema && Object.keys(config.schema).length ? config.schema : null,
@@ -233,6 +236,25 @@ export default function MiniAppViewer({ appId }: { appId: string }) {
     }
   }
 
+  const installStandalone = async () => {
+    setInstalling(true)
+    const r = await api.installStandalone(appId)
+    setInstalling(false)
+    if (r.success) {
+      setStandalone(r.path)
+      toast.success('Added to Applications')
+      await api.openStandalone(appId)
+    } else {
+      toast.error(r.error)
+    }
+  }
+
+  const removeStandalone = async () => {
+    const r = await api.uninstallStandalone(appId)
+    if (r.success) setStandalone(null)
+    else toast.error(r.error)
+  }
+
   const tabs = [
     { key: 'frontend', label: 'Frontend' },
     { key: 'backend', label: 'Backend' },
@@ -256,6 +278,18 @@ export default function MiniAppViewer({ appId }: { appId: string }) {
             {app.description || 'No description'}
           </p>
         </div>
+        {standalone ? (
+          <div className="flex shrink-0 items-center gap-2">
+            <Button onClick={() => void api.openStandalone(appId)}>Open app</Button>
+            <Button type="text" onClick={removeStandalone}>
+              Remove
+            </Button>
+          </div>
+        ) : (
+          <Button loading={installing} onClick={installStandalone}>
+            Add to Applications
+          </Button>
+        )}
         <Switch
           checked={app.enabled}
           disabled={toggling}

@@ -140,6 +140,15 @@ enum Cmd {
     },
     /// Show Nonla Desk, optionally with an app open
     Open { app: Option<String> },
+    /// Install an app as its own macOS app (~/Applications/Nonla Apps) with its own Dock icon
+    Install {
+        app: String,
+        /// Launch it after installing
+        #[arg(long)]
+        open: bool,
+    },
+    /// Remove an app's standalone macOS app (the mini app itself stays)
+    Uninstall { app: String },
     /// Import a mini app from a .zip or a directory
     Import { path: PathBuf },
     /// Export an app as a .zip
@@ -441,6 +450,28 @@ fn execute(cli: &Cli) -> Result<i32, String> {
         Cmd::Open { app } => {
             let v = call("open", json!({ "app": app }))?;
             out(&v, &|_| {});
+            Ok(0)
+        }
+        Cmd::Install { app, open } => {
+            let v = call("install", json!({ "app": app, "open": open }))?;
+            out(&v, &|v| {
+                println!(
+                    "Installed \"{}\" at {}",
+                    v["name"].as_str().unwrap_or_default(),
+                    v["path"].as_str().unwrap_or_default()
+                )
+            });
+            Ok(0)
+        }
+        Cmd::Uninstall { app } => {
+            let v = call("uninstall", json!({ "app": app }))?;
+            out(&v, &|v| match v["removed"].as_str() {
+                Some(p) => println!("Removed {p}"),
+                None => println!(
+                    "\"{}\" is not installed.",
+                    v["name"].as_str().unwrap_or_default()
+                ),
+            });
             Ok(0)
         }
         Cmd::Import { path } => {

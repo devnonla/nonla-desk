@@ -75,6 +75,10 @@ function AppShell() {
       const id = tool.slice('mini/'.length)
       let app = miniAppsRef.current.find((a) => a.id === id)
       if (!app) app = ((await api.listMiniApps()) as MiniAppInfo[]).find((a) => a.id === id)
+      if (app?.enabled && app.standalone) {
+        void api.openStandalone(id)
+        return
+      }
       open(app && !app.enabled ? 'info' : 'app', id)
     })
   }, [open])
