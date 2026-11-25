@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-11-25
+
+### Added
+- Install a mini app as its own macOS app: right-click its icon → Install as Native App, or `nonla install <app>` (`~/Applications/Nonla Apps`). It has its own Dock icon, window and menu bar icon with the app's panel, and runs without the desktop open
+- Native apps show a badge on the desktop and open from there (icon, ⌘K, `nonla open`); Remove Native App or `nonla uninstall` takes them back into the desktop
+- Mini app frontends and panels can `import` any npm package or https URL (antd, dayjs, …) and CSS files; React is shared with the desktop and the first run pins the version it resolved so later runs use the cache. See "Libraries" in `nonla guide`
+- `export default function` is accepted next to `module.exports`
+
+### Changed
+- `ctx.ui` (devnonla-ui) is optional: it still works for existing apps, but the guide and the `nonla create` starter no longer use it
+- Requires Rust 1.89 or newer to build
+
 ## [0.3.0] - 2026-11-24
 
 ### Changed
