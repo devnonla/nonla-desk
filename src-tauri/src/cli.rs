@@ -17,8 +17,10 @@ const GUIDE_DEVELOP: &str =
     include_str!("../../plugins/nonla-desk/skills/nonla-desk/references/develop.md");
 const GUIDE_ICON: &str =
     include_str!("../../plugins/nonla-desk/skills/nonla-desk/references/icon.md");
-const GUIDE_SHARE: &str =
-    include_str!("../../plugins/nonla-desk/skills/nonla-desk/references/share.md");
+const GUIDE_PUBLISH: &str =
+    include_str!("../../plugins/nonla-desk/skills/nonla-market/references/publish.md");
+const GUIDE_REVIEW: &str =
+    include_str!("../../plugins/nonla-desk/skills/nonla-market/references/review.md");
 
 #[derive(Parser)]
 #[command(
@@ -175,9 +177,9 @@ enum Cmd {
     Market(MarketCmd),
     /// App version, JS runtime (Bun/Node) and paths
     Status,
-    /// Print a guide: develop (default), icon or share
+    /// Print a guide: develop (default), icon, publish or review
     Guide {
-        #[arg(value_parser = ["develop", "icon", "share"])]
+        #[arg(value_parser = ["develop", "icon", "publish", "review"])]
         topic: Option<String>,
     },
 }
@@ -425,7 +427,8 @@ fn execute(cli: &Cli) -> Result<i32, String> {
                 "{}",
                 match topic.as_deref() {
                     Some("icon") => GUIDE_ICON,
-                    Some("share") => GUIDE_SHARE,
+                    Some("publish") => GUIDE_PUBLISH,
+                    Some("review") => GUIDE_REVIEW,
                     _ => GUIDE_DEVELOP,
                 }
             );

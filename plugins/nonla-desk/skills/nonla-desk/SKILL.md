@@ -1,6 +1,6 @@
 ---
 name: nonla-desk
-description: Build, change, share and debug Nonla Desk mini apps with the local `nonladesk` CLI. A mini app is a small tool on the user's Nonla Desk (macOS) with a React/JSX frontend, an optional Bun backend and an optional menu bar panel. Use when the user asks to install Nonla Desk, for a mini app or a demo app, for a desktop tool or widget "in Nonla Desk", to share or import a mini app (zip or marketplace), or mentions nonladesk, ~/.nonla-desk, or an existing mini app by name.
+description: Build, change and debug Nonla Desk mini apps with the local `nonladesk` CLI. A mini app is a small tool on the user's Nonla Desk (macOS) with a React/JSX frontend, an optional Bun backend and an optional menu bar panel. Use when the user asks to install Nonla Desk, for a mini app or a demo app, for a desktop tool or widget "in Nonla Desk", or mentions nonladesk, ~/.nonla-desk, or an existing mini app by name.
 ---
 
 # Nonla Desk
@@ -14,7 +14,7 @@ Nonla Desk is a macOS app that hosts **mini apps**. You create and change them w
 | Nonla Desk installed, or `nonladesk` is not found | [references/install.md](references/install.md) |
 | To build or change a mini app (code, CLI workflow, `ctx` API) | [references/develop.md](references/develop.md) (`nonladesk guide`) |
 | An icon for an app | [references/icon.md](references/icon.md) (`nonladesk guide icon`) |
-| To share an app, import a zip, or use a marketplace | [references/share.md](references/share.md) (`nonladesk guide share`). **Installing an app from someone else: use the `nonla-market` skill (full code review first).** |
+| To publish or share an app, or install one made by someone else | the **nonla-market** skill (it reviews the code before installing) |
 
 `nonladesk status` must work before anything else. Read the develop guide before writing code; read the icon guide when you create an app.
 
@@ -34,7 +34,6 @@ Nonla Desk is a macOS app that hosts **mini apps**. You create and change them w
 | On / off | `nonladesk enable <app>`, `nonladesk disable <app>` |
 | Backend output, crashes | `nonladesk logs <app> [-n 200]` |
 | Show the user | `nonladesk open <app>` |
-| Share | `nonladesk export <app> -o x.zip`, `nonladesk import <zip\|dir> [--force]`, `nonladesk market …` (see the share guide) |
 | Standalone macOS app | `nonladesk install <app> [--open]`, `nonladesk uninstall <app>` |
 | Remove | `nonladesk delete <app> --yes` (ask the user first) |
 
@@ -49,7 +48,7 @@ Exit codes: 0 ok, 1 error (message on stderr), 2 `check` found problems.
 - The UI is yours to choose: any library via `import` (antd, Mantine, shadcn-style…), or plain React and CSS. Nonla Desk has no UI kit of its own.
 - After a change: `nonladesk logs <app>` to confirm the backend started (`Backend ready`) and had no errors, then `nonladesk open <app>` so the user sees it.
 - A backend that exits with an error disables its app. Fix the code, then `nonladesk enable <app>`.
-- Apps from other people run with the user's full rights: review them before enabling (share guide).
+- This skill is for apps on this machine. Apps from other people (zip, marketplace) go through the nonla-market skill: never import or enable them without its review.
 - Errors say what is wrong and how to fix the call. Read them before retrying.
 - When done, say in one line which app you made or changed and what it does.
 
