@@ -52,9 +52,9 @@ apps/<id>/{manifest.json, frontend/index.jsx, backend/index.js, panel/index.jsx,
 | Install or update | `nonladesk market install <id>@<market>` (installed **disabled**) |
 | Share your own app | `nonladesk market publish <app> --to <market\|dir>`, then commit and push that repo |
 
-## Review before you enable
+## Review before you install or enable
 
-Backends run on the user's machine with their full rights (files, commands, network). Frontends can load code from the network. Treat any app you did not write like a script from the internet:
+Backends run on the user's machine with their full rights (files, commands, network). Frontends can load code from the network. Treat any app you did not write like a script from the internet. The `nonla-market` skill has the full procedure: read every file, report the risks to the user, install only after they agree. In short:
 
 1. Read every file (`nonladesk market show …` or `nonladesk path <app>`). Look for shell commands, network calls, file access outside the app, `import` from URLs, anything unexpected.
 2. `nonladesk check <app>`.

@@ -14,7 +14,7 @@ Nonla Desk is a macOS app that hosts **mini apps**. You create and change them w
 | Nonla Desk installed, or `nonladesk` is not found | [references/install.md](references/install.md) |
 | To build or change a mini app (code, CLI workflow, `ctx` API) | [references/develop.md](references/develop.md) (`nonladesk guide`) |
 | An icon for an app | [references/icon.md](references/icon.md) (`nonladesk guide icon`) |
-| To share an app, import a zip, or use a marketplace | [references/share.md](references/share.md) (`nonladesk guide share`) |
+| To share an app, import a zip, or use a marketplace | [references/share.md](references/share.md) (`nonladesk guide share`). **Installing an app from someone else: use the `nonla-market` skill (full code review first).** |
 
 `nonladesk status` must work before anything else. Read the develop guide before writing code; read the icon guide when you create an app.
 
