@@ -57,7 +57,7 @@ Mini apps (tools) are written by your coding agent through the `nonladesk` CLI. 
 
 The CLI talks to the running app over a local socket and starts the app if it is closed. There is nothing to sign in to. `nonladesk --help` lists every command.
 
-Nonla Desk updates itself: it checks GitHub releases at launch and every 6 hours, and the menu bar icon has **Check for Updates…**.
+Nonla Desk updates itself: it checks GitHub releases 15 seconds after launch and every 10 minutes, and the menu bar icon has **Check for Updates…**.
 
 ## 🚀 Development
 

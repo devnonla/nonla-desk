@@ -5,7 +5,7 @@
 //! endpoint are set, and passes the pubkey + endpoint as compile-time env. A
 //! build without keys (dev, forks) has no updater and never pulls our releases.
 //!
-//! Checks run 15s after launch and every 6h, or from the tray's
+//! Checks run 15s after launch and every 10 minutes, or from the tray's
 //! "Check for Updates…". Progress shows in the main window via `update:progress`.
 
 use std::io::Write;
@@ -23,7 +23,7 @@ use crate::{backend, paths, server, shell};
 const PUBKEY: Option<&str> = option_env!("NONLA_UPDATER_PUBKEY");
 const ENDPOINT: Option<&str> = option_env!("NONLA_UPDATER_ENDPOINT");
 const FIRST_CHECK: Duration = Duration::from_secs(15);
-const INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
+const INTERVAL: Duration = Duration::from_secs(10 * 60);
 const TRAY_ID: &str = "nonladesk";
 
 #[derive(Default)]
