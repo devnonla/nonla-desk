@@ -24,6 +24,16 @@ export interface MiniAppLogEvent {
   args: string[]
 }
 
+/** A marketplace added with `nonladesk market add`. */
+export interface Marketplace {
+  name: string
+  /** Where it was cloned from (git URL or path). */
+  source: string
+  /** How many apps it lists. */
+  apps: number
+  description: string | null
+}
+
 /** An installed app whose marketplace has a newer version. */
 export interface MarketUpdate {
   /** The app id (`color-picker`). */
@@ -258,7 +268,7 @@ export const api = {
   // updates are reviewed by the user's agent (`nonladesk market diff`).
   /** Installed marketplace apps with a newer version. `refresh` fetches the marketplaces first. */
   marketOutdated: (refresh = false) =>
-    invoke<{ markets: number; apps: MarketUpdate[] }>('market_outdated', { refresh }),
+    invoke<{ markets: Marketplace[]; apps: MarketUpdate[] }>('market_outdated', { refresh }),
   /** The marketplaces were refreshed (in the background or by the CLI). */
   onMarketChecked: (callback: () => void) => on<null>('market:checked', () => callback()),
 

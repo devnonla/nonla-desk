@@ -370,7 +370,7 @@ pub fn outdated(market: Option<&str>) -> Result<Value, String> {
 }
 
 /// Installed apps with a newer version in the marketplaces as last refreshed
-/// (no network), and how many marketplaces there are.
+/// (no network), and the marketplaces themselves.
 pub fn outdated_local(market: Option<&str>) -> Result<Value, String> {
     let apps = apps(market)?
         .as_array()
@@ -379,7 +379,7 @@ pub fn outdated_local(market: Option<&str>) -> Result<Value, String> {
         .into_iter()
         .filter(|a| a["update"].as_bool() == Some(true))
         .collect::<Vec<_>>();
-    Ok(json!({ "markets": list_markets()?.len(), "apps": apps }))
+    Ok(json!({ "markets": list_markets()?, "apps": apps }))
 }
 
 /// What changed between the installed copy of an app and the marketplace's

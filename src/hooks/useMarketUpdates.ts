@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { api, type MarketUpdate } from '@/lib/api'
+import { api, type Marketplace, type MarketUpdate } from '@/lib/api'
 
 /**
  * Installed marketplace apps that have a newer version. Re-read when apps
  * change or the marketplaces are refreshed; `check()` fetches them now.
  */
 export function useMarketUpdates() {
-  const [markets, setMarkets] = useState(0)
+  const [markets, setMarkets] = useState<Marketplace[]>([])
   const [updates, setUpdates] = useState<MarketUpdate[]>([])
   const [checking, setChecking] = useState(false)
 
