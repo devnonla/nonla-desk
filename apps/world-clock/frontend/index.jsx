@@ -15,9 +15,25 @@ module.exports = function WorldClock({ ctx }) {
   }, [])
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', padding: 24, boxSizing: 'border-box', fontFamily: 'system-ui, sans-serif' }}>
+    <div
+      style={{
+        height: '100%',
+        overflowY: 'auto',
+        padding: 24,
+        boxSizing: 'border-box',
+        fontFamily: 'system-ui, sans-serif',
+      }}
+    >
       {ZONES.map(([label, zone]) => (
-        <div key={zone} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #d4d5ce' }}>
+        <div
+          key={zone}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            padding: '10px 0',
+            borderBottom: '1px solid #d4d5ce',
+          }}
+        >
           <span style={{ color: '#5c5e58' }}>{label}</span>
           <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
             {now.toLocaleTimeString('en-GB', { timeZone: zone })}

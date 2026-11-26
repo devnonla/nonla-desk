@@ -776,7 +776,7 @@ fn save_config_schema(app_id: &str, schema: &Value) -> Result<(), String> {
 
 // ─── Import / export ─────────────────────────────────────────────────────────
 
-/// Bundle read from a ZIP or a directory: manifest + frontend.js/backend.js/panel.js.
+/// An app read from a ZIP or a directory (see `bundle_files` for the layout).
 pub struct Bundle {
     manifest: Value,
     frontend: String,
@@ -924,6 +924,13 @@ pub fn bundle_from_zip(bytes: &[u8]) -> Result<Bundle, String> {
             _ => unexpected.push(name),
         }
     }
+    let tops: std::collections::BTreeSet<&str> = files
+        .iter()
+        .map(|(name, rel)| &name[..name.len() - rel.len()])
+        .collect();
+    if tops.len() > 1 {
+        return Err("The zip holds more than one app folder: put one app per zip".into());
+    }
     if !unexpected.is_empty() {
         return Err(format!(
             "Unexpected file(s) in the zip: {}. A mini app zip holds only: manifest.json, \
@@ -932,7 +939,11 @@ pub fn bundle_from_zip(bytes: &[u8]) -> Result<Bundle, String> {
         ));
     }
     let mut read = |paths: &[&str]| -> Result<String, String> {
-        let Some((name, _)) = files.iter().find(|(_, p)| paths.contains(&p.as_str())) else {
+        // The first path wins: the shared layout before the pre-0.6 flat names.
+        let Some((name, _)) = paths
+            .iter()
+            .find_map(|want| files.iter().find(|(_, p)| p == want))
+        else {
             return Ok(String::new());
         };
         let mut s = String::new();
@@ -956,28 +967,54 @@ pub fn bundle_from_zip(bytes: &[u8]) -> Result<Bundle, String> {
     })
 }
 
+/// One file of an app directory: "" when missing. Symlinks are refused (they
+/// could pull in any file of this machine) and so are files over the size limit.
+fn read_app_file(dir: &Path, rel: &str) -> Result<String, String> {
+    let path = dir.join(rel);
+    let Ok(meta) = fs::symlink_metadata(&path) else {
+        return Ok(String::new());
+    };
+    if meta.file_type().is_symlink() {
+        return Err(format!(
+            "{rel} is a symlink; a mini app holds plain files only"
+        ));
+    }
+    if !meta.is_file() {
+        return Ok(String::new());
+    }
+    if meta.len() > MAX_FILE_BYTES {
+        return Err(format!("{rel} is larger than 2 MB"));
+    }
+    fs::read_to_string(&path).map_err(|e| format!("{rel}: {e}"))
+}
+
 pub fn bundle_from_dir(dir: &Path) -> Result<Bundle, String> {
-    let manifest = fs::read_to_string(dir.join("manifest.json")).map_err(|_| {
-        format!(
+    let manifest = read_app_file(dir, "manifest.json")?;
+    if manifest.is_empty() {
+        return Err(format!(
             "Invalid mini app directory: missing manifest.json in {}",
             dir.display()
-        )
-    })?;
-    let read = |a: &str, b: &str| {
-        fs::read_to_string(dir.join(a))
-            .or_else(|_| fs::read_to_string(dir.join(b)))
-            .unwrap_or_default()
+        ));
+    }
+    // The shared layout wins over the pre-0.6 flat names.
+    let read = |a: &str, b: &str| -> Result<String, String> {
+        let s = read_app_file(dir, a)?;
+        if s.is_empty() {
+            read_app_file(dir, b)
+        } else {
+            Ok(s)
+        }
     };
     Ok(Bundle {
         manifest: serde_json::from_str(&manifest).map_err(|e| format!("manifest.json: {e}"))?,
-        frontend: read("frontend.js", "frontend/index.jsx"),
-        backend: read("backend.js", "backend/index.js"),
-        panel: read("panel.js", "panel/index.jsx"),
-        icon_svg: read("icon.svg", "icon.svg"),
+        frontend: read("frontend/index.jsx", "frontend.js")?,
+        backend: read("backend/index.js", "backend.js")?,
+        panel: read("panel/index.jsx", "panel.js")?,
+        icon_svg: read_app_file(dir, "icon.svg")?,
     })
 }
 
-/// Create the app, or update it in place if one with the same name exists.
+/// Create the app, or update the app with the same id (only with `force`).
 pub fn import_bundle(b: Bundle, force: bool) -> Result<ImportResult, String> {
     b.validate()?;
     let m = &b.manifest;
@@ -1003,6 +1040,7 @@ pub fn import_bundle(b: Bundle, force: bool) -> Result<ImportResult, String> {
         let app = update(
             &existing.id,
             &UpdateInput {
+                name: Some(name),
                 description: s("description"),
                 icon: s("icon"),
                 category: s("category"),
@@ -1176,6 +1214,33 @@ mod zip_tests {
             let b = bundle_from_zip(&zip_of(&files)).unwrap();
             b.validate().unwrap();
         }
+    }
+
+    #[test]
+    fn one_app_per_zip_and_new_layout_wins() {
+        let two = zip_of(&[("a/manifest.json", M), ("b/frontend/index.jsx", "x")]);
+        assert!(bundle_from_zip(&two).is_err());
+        let both = bundle_from_zip(&zip_of(&[
+            ("manifest.json", M),
+            ("frontend.js", "old"),
+            ("frontend/index.jsx", "new"),
+        ]))
+        .unwrap();
+        assert_eq!(both.frontend, "new");
+    }
+
+    #[test]
+    fn dir_refuses_symlinks() {
+        let dir = std::env::temp_dir().join(format!("nd-symlink-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(dir.join("frontend")).unwrap();
+        fs::write(dir.join("manifest.json"), M).unwrap();
+        std::os::unix::fs::symlink("/etc/hosts", dir.join("frontend/index.jsx")).unwrap();
+        assert!(bundle_from_dir(&dir).is_err());
+        fs::remove_file(dir.join("frontend/index.jsx")).unwrap();
+        fs::write(dir.join("frontend/index.jsx"), "x").unwrap();
+        assert!(bundle_from_dir(&dir).is_ok());
+        let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]

@@ -367,12 +367,21 @@ fn run_market(cmd: &MarketCmd, out: &dyn Fn(&Value, Human)) -> Result<i32, Strin
         MarketCmd::Show { app } => {
             let v = call("market_show", json!({ "app": app }))?;
             out(&v, &|v| {
-                println!("{}@{}", s(v, "name"), s(v, "market"));
+                println!(
+                    "{}@{}  {}  (commit {} of {})",
+                    s(v, "name"),
+                    s(v, "market"),
+                    v["manifest"]["version"].as_str().unwrap_or("?"),
+                    s(v, "commit"),
+                    s(v, "source")
+                );
                 println!("dir: {}", s(v, "dir"));
                 for f in v["files"].as_array().into_iter().flatten() {
                     println!("  {} ({} bytes)", s(f, "path"), f["bytes"]);
                 }
-                println!("Read these files before installing: backends can run shell commands.");
+                println!(
+                    "Read every file before installing: a backend runs with the user's full rights."
+                );
             });
         }
         MarketCmd::Install { app, force } => {
@@ -701,14 +710,7 @@ fn execute(cli: &Cli) -> Result<i32, String> {
                 Some(d) => d.clone(),
                 None => {
                     let info = call("get", json!({ "app": app }))?;
-                    let slug: String = info["name"]
-                        .as_str()
-                        .unwrap_or("app")
-                        .to_lowercase()
-                        .chars()
-                        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
-                        .collect();
-                    PathBuf::from(format!("{slug}.miniapp.zip"))
+                    PathBuf::from(format!("{}.zip", info["slug"].as_str().unwrap_or("app")))
                 }
             };
             let target = std::env::current_dir()

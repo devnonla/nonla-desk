@@ -7,7 +7,7 @@
     {
       "name": "nonla-desk",
       "source": "./plugins/nonla-desk",
-      "description": "Build and manage Nonla Desk mini apps with the nonladesk CLI."
+      "description": "Build Nonla Desk mini apps with the nonladesk CLI, share them, and review other people's before installing."
     }
   ],
   "metadata": {

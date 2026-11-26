@@ -22,7 +22,7 @@ nonladesk market update <market>          # latest version
 nonladesk market apps <market>            # what it offers, versions, installed state
 nonladesk market show <id>@<market>       # prints the app's folder and every file with its size
 ```
-`market show` prints `dir:`. That folder holds the app exactly as it would be installed.
+`market show` prints the version, the commit and repo it comes from, and `dir:`, the folder that holds the app exactly as it would be installed. Install right after the review: a `market update` in between changes what gets installed.
 
 Zip someone sent: unpack it into a new empty folder (`mkdir -p /tmp/review-<name> && unzip <zip> -d /tmp/review-<name>`), and review that folder. Do not run anything from it.
 

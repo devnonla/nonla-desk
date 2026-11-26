@@ -28,7 +28,7 @@ frontend/index.jsx    backend/index.js    panel/index.jsx    icon.svg
 - `import` creates the app **disabled**. An app with the same id is never overwritten unless you pass `--force`.
 
 ```bash
-nonladesk export color-picker -o color-picker.zip
+nonladesk export color-picker              # writes color-picker.zip (or -o path)
 nonladesk import color-picker.zip          # on the other machine; installs disabled
 ```
 
@@ -48,7 +48,7 @@ apps/<id>/{manifest.json, frontend/index.jsx, backend/index.js, panel/index.jsx,
   "apps": [ { "name": "color-picker", "source": "./apps/color-picker", "version": "1.0.0", "description": "…", "category": "Dev Tools" } ] }
 ```
 
-`name` is the app id; `source` is a path inside the repo. An app is addressed as `<id>@<market>`. The Nonla Desk repo itself is a marketplace: `nonladesk market add devnonla/nonla-desk`.
+`name` must equal the app's manifest `id`; `source` is a path inside the repo. App folders hold plain files only (symlinks are refused). The version shown to users comes from each app's `manifest.json`. An app is addressed as `<id>@<market>`. The Nonla Desk repo itself is a marketplace: `nonladesk market add devnonla/nonla-desk`.
 
 | Do | Command |
 |---|---|

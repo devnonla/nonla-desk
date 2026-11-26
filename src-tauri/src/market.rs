@@ -3,7 +3,7 @@
 //!
 //! ```text
 //! marketplace.json    {name, owner, description, apps: [{name, source, version, ...}]}
-//! apps/<slug>/{manifest.json, frontend/index.jsx, backend/index.js, panel/index.jsx, icon.svg}
+//! apps/<id>/{manifest.json, frontend/index.jsx, backend/index.js, panel/index.jsx, icon.svg}
 //! ```
 //!
 //! Clones live in `~/.nonla-desk/markets/<name>`. Installing reads the app's
@@ -135,7 +135,37 @@ fn source_dir(market: &Path, entry: &Value) -> Result<PathBuf, String> {
     if !real.starts_with(&root) {
         return Err(format!("Unsafe app source \"{src}\""));
     }
+    let mut links = Vec::new();
+    walk(&real, &real, &mut Vec::new(), &mut links);
+    if !links.is_empty() {
+        return Err(format!(
+            "{src} contains symlinks ({}); a mini app holds plain files only",
+            links.join(", ")
+        ));
+    }
     Ok(real)
+}
+
+/// Files under `dir` as (relative path, bytes), never following symlinks;
+/// symlinks go to `links`.
+fn walk(root: &Path, dir: &Path, files: &mut Vec<(String, u64)>, links: &mut Vec<String>) {
+    let Ok(rd) = fs::read_dir(dir) else { return };
+    for e in rd.flatten() {
+        let p = e.path();
+        let rel = p
+            .strip_prefix(root)
+            .unwrap_or(&p)
+            .to_string_lossy()
+            .to_string();
+        let Ok(t) = e.file_type() else { continue };
+        if t.is_symlink() {
+            links.push(rel);
+        } else if t.is_dir() {
+            walk(root, &p, files, links);
+        } else if let Ok(meta) = e.metadata() {
+            files.push((rel, meta.len()));
+        }
+    }
 }
 
 fn entry_name(e: &Value) -> &str {
@@ -194,7 +224,11 @@ pub fn add(source: &str, name: Option<&str>) -> Result<Value, String> {
     let url = clone_url(source.trim());
     let root = paths::markets_dir();
     fs::create_dir_all(&root).map_err(|e| e.to_string())?;
-    let tmp = root.join(format!(".adding-{}", std::process::id()));
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or_default();
+    let tmp = root.join(format!(".adding-{}-{nanos}", std::process::id()));
     let _ = fs::remove_dir_all(&tmp);
     git(
         None,
@@ -302,7 +336,13 @@ pub fn apps(market: Option<&str>) -> Result<Value, String> {
         let dir = market_dir(&m)?;
         for e in entries(&dir)? {
             let name = entry_name(&e).to_string();
-            let version = e["version"].as_str().unwrap_or("").to_string();
+            // The app's manifest is the source of truth; the entry may lag behind.
+            let version = source_dir(&dir, &e)
+                .ok()
+                .and_then(|d| read_json(&d.join("manifest.json")).ok())
+                .and_then(|m| m["version"].as_str().map(str::to_string))
+                .or_else(|| e["version"].as_str().map(str::to_string))
+                .unwrap_or_default();
             let inst = installed_from(&m, &name).and_then(|id| miniapp::get(&id).ok().flatten());
             out.push(json!({
                 "name": name,
@@ -324,33 +364,19 @@ pub fn show(reference: &str) -> Result<Value, String> {
     let dir = market_dir(&market)?;
     let entry = find_entry(&dir, &app)?;
     let src = source_dir(&dir, &entry)?;
-    let mut files = Vec::new();
-    collect_files(&src, &src, &mut files);
+    let (mut files, mut links) = (Vec::new(), Vec::new());
+    walk(&src, &src, &mut files, &mut links);
+    files.sort();
     Ok(json!({
         "name": entry_name(&entry),
         "market": market,
+        "commit": git(Some(&dir), &["rev-parse", "--short", "HEAD"]).unwrap_or_default(),
+        "source": git(Some(&dir), &["remote", "get-url", "origin"]).unwrap_or_default(),
         "entry": entry,
         "manifest": read_json(&src.join("manifest.json")).unwrap_or(Value::Null),
         "dir": src,
-        "files": files,
+        "files": files.iter().map(|(p, n)| json!({ "path": p, "bytes": n })).collect::<Vec<_>>(),
     }))
-}
-
-fn collect_files(root: &Path, dir: &Path, out: &mut Vec<Value>) {
-    let Ok(rd) = fs::read_dir(dir) else { return };
-    for e in rd.flatten() {
-        let p = e.path();
-        if p.is_dir() {
-            collect_files(root, &p, out);
-        } else if let Ok(meta) = e.metadata() {
-            let rel = p
-                .strip_prefix(root)
-                .unwrap_or(&p)
-                .to_string_lossy()
-                .to_string();
-            out.push(json!({ "path": rel, "bytes": meta.len() }));
-        }
-    }
 }
 
 /// Import an app from a marketplace. It lands disabled (updates keep their
@@ -362,12 +388,19 @@ pub fn install(reference: &str, force: bool) -> Result<ImportResult, String> {
     let entry = find_entry(&dir, &app)?;
     let name = entry_name(&entry).to_string();
     let bundle = miniapp::bundle_from_dir(&source_dir(&dir, &entry)?)?;
-    if let Some(existing) = miniapp::find_by_slug(&bundle.slug()?)? {
+    let id = bundle.slug()?;
+    if id != name {
+        return Err(format!(
+            "marketplace.json lists \"{name}\" but its manifest.json has the id \"{id}\"; \
+             the marketplace must fix one of them"
+        ));
+    }
+    if let Some(existing) = miniapp::find_by_slug(&id)? {
         let ours = installed_from(&market, &name).is_some_and(|id| id == existing.id);
         if !ours && !force {
             return Err(format!(
-                "A mini app named \"{}\" already exists and was not installed from {market}. \
-                 Delete or rename it, or pass --force to overwrite it.",
+                "A mini app with the id \"{id}\" (\"{}\") already exists and was not installed \
+                 from {market}. Delete it, or pass --force to overwrite it.",
                 existing.name
             ));
         }
@@ -404,6 +437,11 @@ pub fn publish(app: &str, to: &str) -> Result<Value, String> {
         (paths::markets_dir().join(to), to.to_string())
     } else {
         let dir = PathBuf::from(to);
+        if !dir.is_absolute() {
+            return Err(format!(
+                "No marketplace named \"{to}\" is added. Pass an added marketplace's name or a folder path (./{to})."
+            ));
+        }
         fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
         let name = dir
             .file_name()

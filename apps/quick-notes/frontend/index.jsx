@@ -14,12 +14,29 @@ module.exports = function QuickNotes({ ctx }) {
   }
 
   return (
-    <div style={{ height: '100%', padding: 24, boxSizing: 'border-box', fontFamily: 'system-ui, sans-serif' }}>
+    <div
+      style={{
+        height: '100%',
+        padding: 24,
+        boxSizing: 'border-box',
+        fontFamily: 'system-ui, sans-serif',
+      }}
+    >
       <textarea
         value={text}
         onChange={change}
         placeholder="Write something. It is saved as you type."
-        style={{ width: '100%', height: '100%', boxSizing: 'border-box', padding: 12, fontSize: 14, border: '1px solid #d4d5ce', borderRadius: 8, resize: 'none', outline: 'none' }}
+        style={{
+          width: '100%',
+          height: '100%',
+          boxSizing: 'border-box',
+          padding: 12,
+          fontSize: 14,
+          border: '1px solid #d4d5ce',
+          borderRadius: 8,
+          resize: 'none',
+          outline: 'none',
+        }}
       />
     </div>
   )
