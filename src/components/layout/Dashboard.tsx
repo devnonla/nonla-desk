@@ -241,7 +241,7 @@ export default function Dashboard({ apps, loading, loadApps }: DashboardProps) {
       {/* Icons fill columns top to bottom, then wrap to the right. */}
       <nav
         aria-label="Mini apps"
-        className="absolute inset-x-0 top-11 bottom-0 z-20 px-3 py-4 flex flex-col flex-wrap content-start items-start gap-x-1 gap-y-3 overflow-x-auto"
+        className="absolute inset-x-0 top-11 bottom-0 z-20 px-5 py-4 flex flex-col flex-wrap content-start items-start gap-x-1 gap-y-3 overflow-x-auto"
       >
         <AboutIcon active={windows.some((w) => w.kind === 'about')} onOpen={() => open('about')} />
         {loading ? <span className="sr-only">Loading apps…</span> : apps.map(renderAppIcon)}

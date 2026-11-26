@@ -18,11 +18,14 @@ interface DesktopIconProps {
 }
 
 export const iconButtonClass =
-  'group w-22 flex flex-col items-center gap-1.5 pt-2 pb-1.5 px-1 rounded-lg border-none cursor-pointer select-none outline-none bg-transparent focus-visible:outline-2 focus-visible:outline-white/80'
+  'group w-24 flex flex-col items-center gap-1.5 pt-2 pb-1.5 px-1 rounded-lg border-none cursor-pointer select-none outline-none bg-transparent focus-visible:outline-2 focus-visible:outline-white/80'
 
-/** macOS desktop style: white text with a soft shadow, no selection highlight. */
+/**
+ * macOS desktop style: white text with a soft shadow, no selection highlight. The
+ * name is at most twice the icon wide (96px): it goes to a second line when longer, and is cut with "…" after two lines.
+ */
 export function labelClass(muted: boolean) {
-  return `max-w-full px-1.5 text-[12px] leading-4 font-medium text-center line-clamp-2 [text-shadow:0_1px_2px_rgba(0,0,0,0.65),0_0_6px_rgba(0,0,0,0.35)] ${
+  return `w-max max-w-24 px-0.5 text-[12px] leading-4 font-medium text-center line-clamp-2 [text-shadow:0_1px_2px_rgba(0,0,0,0.65),0_0_6px_rgba(0,0,0,0.35)] ${
     muted ? 'text-white/70' : 'text-white'
   }`
 }
