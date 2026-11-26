@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-11-26
+
+### Changed
+- Like Apple Passwords, Nonla Desk and native apps with a menu bar panel drop their Dock icon while their window is closed and only keep the menu bar icon; opening the window from the menu bar brings the Dock icon back
+
 ## [0.4.0] - 2026-11-25
 
 ### Added
