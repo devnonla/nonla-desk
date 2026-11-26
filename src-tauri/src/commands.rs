@@ -75,7 +75,7 @@ pub async fn toggle_mini_app(app: AppHandle, id: String) -> Result<EnableResult,
 
 #[tauri::command]
 pub async fn import_mini_app_zip(app: AppHandle, data: Vec<u8>) -> Result<Value, String> {
-    let result = miniapp::import_bundle(miniapp::bundle_from_zip(&data)?)?;
+    let result = miniapp::import_bundle(miniapp::bundle_from_zip(&data)?, false)?;
     Ok(ops::import(&app, result).await)
 }
 

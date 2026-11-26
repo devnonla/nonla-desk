@@ -106,6 +106,15 @@ module.exports = function App({ ctx }) {
 }
 "#;
 
+/// Run blocking work (git, disk) off the async runtime.
+async fn blocking<T: Send + 'static>(
+    f: impl FnOnce() -> Result<T, String> + Send + 'static,
+) -> Result<T, String> {
+    tauri::async_runtime::spawn_blocking(f)
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 async fn dispatch(app: &AppHandle, cmd: &str, args: &Value) -> Result<Value, String> {
     match cmd {
         "ping" => Ok(json!({
@@ -144,6 +153,7 @@ async fn dispatch(app: &AppHandle, cmd: &str, args: &Value) -> Result<Value, Str
         "create" => {
             let input = CreateInput {
                 name: req(args, "name")?,
+                slug: opt(args, "id"),
                 description: opt(args, "description"),
                 icon: opt(args, "icon"),
                 icon_svg: opt(args, "iconSvg"),
@@ -323,7 +333,7 @@ async fn dispatch(app: &AppHandle, cmd: &str, args: &Value) -> Result<Value, Str
                 let bytes = std::fs::read(&path).map_err(|e| format!("{}: {e}", path.display()))?;
                 miniapp::bundle_from_zip(&bytes)?
             };
-            let result = miniapp::import_bundle(bundle)?;
+            let result = miniapp::import_bundle(bundle, args["force"].as_bool() == Some(true))?;
             Ok(ops::import(app, result).await)
         }
 

@@ -1,49 +1,64 @@
 ---
 name: nonla-desk
-description: Build, change and debug Nonla Desk mini apps with the local `nonladesk` CLI. A mini app is a small tool on the user's Nonla Desk (macOS) with a React/JSX frontend, an optional Bun backend and an optional menu bar panel. Use when the user asks for a mini app, a desktop tool or widget "in Nonla Desk", or mentions nonladesk, ~/.nonla-desk, or an existing mini app by name.
+description: Build, change, share and debug Nonla Desk mini apps with the local `nonladesk` CLI. A mini app is a small tool on the user's Nonla Desk (macOS) with a React/JSX frontend, an optional Bun backend and an optional menu bar panel. Use when the user asks to install Nonla Desk, for a mini app or a demo app, for a desktop tool or widget "in Nonla Desk", to share or import a mini app (zip), or mentions nonladesk, ~/.nonla-desk, or an existing mini app by name.
 ---
 
 # Nonla Desk
 
-Nonla Desk is a macOS app that hosts **mini apps**. You create and change them with the `nonladesk` CLI. Everything is local: no server URL, no login, no API key. The CLI talks to the running app over a Unix socket (`~/.nonla-desk/nonladesk.sock`) and opens the app if it is closed.
+Nonla Desk is a macOS app that hosts **mini apps**. You create and change them with the `nonladesk` CLI. Everything is local.
 
-## Before the first command
+## What do you need?
 
-1. Check the CLI: `nonladesk status`. If `nonladesk` is not found, use `"/Applications/Nonla Desk.app/Contents/MacOS/nonla-desk"` with the same arguments, or ask the user to install Nonla Desk:
-   `curl -fsSL https://raw.githubusercontent.com/devnonla/nonla-desk/main/scripts/install.sh | bash`
-2. `status` shows the JavaScript runtime. Backends need Bun (or Node.js). If it says none, tell the user to run `curl -fsSL https://bun.sh/install | bash`.
-3. Read [references/guide.md](references/guide.md) before writing code. It has the frontend, backend and panel formats, `ctx`, the UI kit and the styling rules. `nonladesk guide` prints the same text.
+| The user wants… | Read |
+|---|---|
+| Nonla Desk installed, or `nonladesk` is not found | [references/install.md](references/install.md) |
+| To build or change a mini app (code, CLI workflow, `ctx` API) | [references/develop.md](references/develop.md) (`nonladesk guide`) |
+| An icon for an app | [references/icon.md](references/icon.md) (`nonladesk guide icon`) |
+| To share an app or import a zip | [references/share.md](references/share.md) (`nonladesk guide share`) |
+
+`nonladesk status` must work before anything else. Read the develop guide before writing code; read the icon guide when you create an app.
 
 ## Commands
 
-`<app>` is an id or a name (case-insensitive). Put `--json` before the command for JSON output.
+`<app>` is an id (`color-picker`) or a name, case-insensitive. Put `--json` before the command for JSON output.
 
 | Do | Command |
 |---|---|
 | See what exists | `nonladesk list`, `nonladesk get <app>` |
 | Where the files are | `nonladesk path <app> [frontend\|backend\|panel\|icon]` |
-| New app (created disabled) | `nonladesk create "Name" --frontend f.jsx [--backend b.js] [--panel p.jsx] --icon-file icon.svg [--category "Dev Tools"] [--description "…"] [--enable]` |
+| New app (created disabled) | `nonladesk create "Name" [--id my-id] --frontend f.jsx [--backend b.js] [--panel p.jsx] --icon-file icon.svg [--category "Dev Tools"] [--description "…"] [--enable]` |
 | Replace one file | `nonladesk write <app> frontend\|backend\|panel <file>` (or `-` for stdin). Reloads the app. |
-| Metadata, icon | `nonladesk update <app> --name/--description/--icon-file/--category/--version` |
+| Metadata, icon, version | `nonladesk update <app> --name/--description/--icon-file/--category/--version` |
 | Syntax check | `nonladesk check <app>`, or `nonladesk check --frontend f.jsx` before creating |
 | Apply edits made in place | `nonladesk reload <app>` |
 | On / off | `nonladesk enable <app>`, `nonladesk disable <app>` |
 | Backend output, crashes | `nonladesk logs <app> [-n 200]` |
 | Show the user | `nonladesk open <app>` |
-| Share | `nonladesk export <app> -o x.zip`, `nonladesk import <zip\|dir>` |
-| Standalone app | `nonladesk install <app> [--open]`, `nonladesk uninstall <app>` |
+| Share | `nonladesk export <app> -o x.zip`, `nonladesk import <zip\|dir> [--force]` (see the share guide) |
+| Standalone macOS app | `nonladesk install <app> [--open]`, `nonladesk uninstall <app>` |
 | Remove | `nonladesk delete <app> --yes` (ask the user first) |
 
 Exit codes: 0 ok, 1 error (message on stderr), 2 `check` found problems.
 
 ## How to work
 
-- `nonladesk list` first. App names are unique: never create "Todo 2" or a copy to iterate. Edit the existing app.
+- `nonladesk list` first. App names and ids are unique: never create "Todo 2" or a copy to iterate. Edit the existing app.
 - Edit an existing app's files in place (paths from `nonladesk path`), then `nonladesk check <app>` and `nonladesk reload <app>`.
 - New app: write the files in a temp folder, `nonladesk check --frontend … --icon-file …`, then `nonladesk create … --enable`.
-- UI: an app may `import` any library (antd, dayjs…; see "Libraries" in the guide). The built-in `ctx.ui` (devnonla-ui) is optional and only kept for existing apps. There is no icon pack; `ctx.icons` fails.
-- Every app gets an SVG icon (`--icon-file icon.svg`) that says what it does. Read the Icon section of the guide for the rules; the call fails with the reason if the SVG is not allowed.
+- Every app gets an SVG icon that says what it does (icon guide).
+- The UI is yours to choose: any library via `import` (antd, Mantine, shadcn-style…), or plain React and CSS. Nonla Desk has no UI kit of its own.
 - After a change: `nonladesk logs <app>` to confirm the backend started (`Backend ready`) and had no errors, then `nonladesk open <app>` so the user sees it.
 - A backend that exits with an error disables its app. Fix the code, then `nonladesk enable <app>`.
+- Apps from other people run with the user's full rights: review them before enabling (share guide).
 - Errors say what is wrong and how to fix the call. Read them before retrying.
 - When done, say in one line which app you made or changed and what it does.
+
+## Demo app
+
+When the user asks for a demo, or has no mini apps yet, make one small app that shows what Nonla Desk does:
+
+1. `nonladesk list` first. If a suitable app already exists, open it with `nonladesk open <app>` instead of making a copy.
+2. Pick something that needs no setup, such as a notes pad that keeps its text with `ctx.storage` (a frontend and a short backend), or a clock. Give it a plain name and a one-line description.
+3. Write `frontend.jsx` (and `backend.js` if it needs one) and an `icon.svg` in a temp folder, following the guides.
+4. `nonladesk check --frontend … --icon-file …`, then `nonladesk create "Name" --frontend … [--backend …] --icon-file … --enable`.
+5. `nonladesk logs <app>` to confirm `Backend ready`, then `nonladesk open <app>`. Tell the user in one line what you made, that it is on their Nonla Desk, and that closing the window keeps Nonla Desk in the menu bar.

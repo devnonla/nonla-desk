@@ -23,6 +23,8 @@ use crate::{db, paths};
 #[serde(rename_all = "camelCase")]
 pub struct MiniApp {
     pub id: String,
+    /// Unique, stable, human id: `color-picker`. Never changes after creation.
+    pub slug: String,
     pub name: String,
     pub description: String,
     pub icon: String,
@@ -39,6 +41,7 @@ impl MiniApp {
     fn from_row(r: &Row) -> rusqlite::Result<Self> {
         Ok(Self {
             id: r.get("id")?,
+            slug: r.get("slug")?,
             name: r.get("name")?,
             description: r.get("description")?,
             icon: r.get("icon")?,
@@ -76,6 +79,8 @@ pub struct Code {
 #[serde(rename_all = "camelCase")]
 pub struct CreateInput {
     pub name: String,
+    /// Unique id (slug). Derived from the name when absent.
+    pub slug: Option<String>,
     pub description: Option<String>,
     pub icon: Option<String>,
     /// Inline SVG icon (see `validate_svg_icon`). Stored as `icon.svg`.
@@ -178,6 +183,49 @@ pub fn get(id: &str) -> Result<Option<MiniApp>, String> {
     })
 }
 
+/// `Color Picker!` → `color-picker`.
+pub fn slugify(name: &str) -> String {
+    let s: String = name
+        .to_lowercase()
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+        .collect();
+    let s = s
+        .split('-')
+        .filter(|p| !p.is_empty())
+        .collect::<Vec<_>>()
+        .join("-");
+    let s: String = s.chars().take(64).collect();
+    let s = s.trim_end_matches('-').to_string();
+    if s.is_empty() {
+        "app".into()
+    } else {
+        s
+    }
+}
+
+/// Lowercase letters, digits and single hyphens; 1-64 chars; like a git repo or plugin name.
+pub fn valid_slug(s: &str) -> bool {
+    !s.is_empty()
+        && s.len() <= 64
+        && !s.starts_with('-')
+        && !s.ends_with('-')
+        && !s.contains("--")
+        && s.chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+}
+
+pub fn find_by_slug(slug: &str) -> Result<Option<MiniApp>, String> {
+    db::with(|c| {
+        let mut stmt = c.prepare("SELECT * FROM mini_apps WHERE slug = ?1")?;
+        let mut rows = stmt.query([slug])?;
+        match rows.next()? {
+            Some(r) => Ok(Some(MiniApp::from_row(r)?)),
+            None => Ok(None),
+        }
+    })
+}
+
 /// App identity is the name (case-insensitive, trimmed). Used to prevent clones.
 pub fn find_by_name(name: &str) -> Result<Option<MiniApp>, String> {
     let n = name.trim().to_lowercase();
@@ -194,16 +242,19 @@ pub fn find_by_name(name: &str) -> Result<Option<MiniApp>, String> {
     })
 }
 
-/// Look up by id, then by name. Used by the CLI.
+/// Look up by id, then slug, then name. Used by the CLI.
 pub fn resolve(id_or_name: &str) -> Result<MiniApp, String> {
     if let Some(app) = get(id_or_name)? {
+        return Ok(app);
+    }
+    if let Some(app) = find_by_slug(id_or_name)? {
         return Ok(app);
     }
     if let Some(app) = find_by_name(id_or_name)? {
         return Ok(app);
     }
     Err(format!(
-        "No mini app with id or name \"{id_or_name}\". Run `nonladesk list`."
+        "No mini app with id, slug or name \"{id_or_name}\". Run `nonladesk list`."
     ))
 }
 
@@ -380,8 +431,9 @@ fn write_code(
     Ok(())
 }
 
-fn manifest_value(app: &MiniApp) -> Value {
+pub fn manifest_value(app: &MiniApp) -> Value {
     let mut m = json!({
+        "id": app.slug,
         "name": app.name,
         "version": app.version,
         "icon": app.icon,
@@ -424,6 +476,37 @@ pub fn create(input: &CreateInput) -> Result<MiniApp, String> {
         Some(svg) if !svg.is_empty() => Some(validate_svg_icon(svg)?),
         _ => None,
     };
+    let slug = match input
+        .slug
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        Some(s) => {
+            if !valid_slug(s) {
+                return Err(format!(
+                    "Invalid id \"{s}\": use lowercase letters, digits and single hyphens (e.g. color-picker)"
+                ));
+            }
+            if let Some(clash) = find_by_slug(s)? {
+                return Err(format!(
+                    "The id \"{s}\" is already used by \"{}\" ({})",
+                    clash.name, clash.id
+                ));
+            }
+            s.to_string()
+        }
+        None => {
+            let base = slugify(name);
+            let mut slug = base.clone();
+            let mut n = 2;
+            while find_by_slug(&slug)?.is_some() {
+                slug = format!("{base}-{n}");
+                n += 1;
+            }
+            slug
+        }
+    };
     let id = new_id();
     db::with(|c| {
         let order: i64 = c.query_row(
@@ -432,8 +515,8 @@ pub fn create(input: &CreateInput) -> Result<MiniApp, String> {
             |r| r.get(0),
         )?;
         c.execute(
-            "INSERT INTO mini_apps (id, name, description, icon, category, version, enabled, display_order, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now'))",
+            "INSERT INTO mini_apps (id, slug, name, description, icon, category, version, enabled, display_order, created_at, updated_at)
+             VALUES (?1, ?9, ?2, ?3, ?4, ?5, ?6, ?7, ?8, strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now'))",
             params![
                 id,
                 name,
@@ -443,6 +526,7 @@ pub fn create(input: &CreateInput) -> Result<MiniApp, String> {
                 input.version.clone().unwrap_or_else(|| "1.0.0".into()),
                 input.enabled.unwrap_or(false) as i64,
                 order,
+                slug,
             ],
         )
     })?;
@@ -701,30 +785,174 @@ pub struct Bundle {
     icon_svg: String,
 }
 
+impl Bundle {
+    /// Format checks shared by zip and directory imports.
+    pub fn validate(&self) -> Result<(), String> {
+        let name = self.name()?;
+        self.slug()?;
+        if name.chars().count() > 80 {
+            return Err("Invalid manifest: name is longer than 80 characters".into());
+        }
+        match self.manifest.get("version") {
+            None => {
+                return Err(
+                    "Invalid manifest: version is required (e.g. \"1.0.0\"); it is how updates are detected"
+                        .into(),
+                )
+            }
+            Some(v) if !v.as_str().is_some_and(is_semver) => {
+                return Err(format!(
+                    "Invalid manifest: version must look like 1.2.3, got {v}"
+                ))
+            }
+            Some(_) => {}
+        }
+        for key in ["description", "icon", "category"] {
+            if self.manifest.get(key).is_some_and(|v| !v.is_string()) {
+                return Err(format!("Invalid manifest: {key} must be a string"));
+            }
+        }
+        if self.manifest.get("config").is_some_and(|v| !v.is_object()) {
+            return Err("Invalid manifest: config must be an object".into());
+        }
+        if self.frontend.trim().is_empty() && self.backend.trim().is_empty() {
+            return Err("Invalid mini app: must have a frontend or a backend".into());
+        }
+        for (label, text) in [
+            ("frontend", &self.frontend),
+            ("backend", &self.backend),
+            ("panel", &self.panel),
+        ] {
+            if text.len() as u64 > MAX_FILE_BYTES {
+                return Err(format!("{label} code is larger than 2 MB"));
+            }
+        }
+        if !self.icon_svg.trim().is_empty() {
+            validate_svg_icon(&self.icon_svg).map_err(|e| format!("icon.svg: {e}"))?;
+        }
+        Ok(())
+    }
+
+    /// The manifest `id`, or one derived from the name for zips made before ids existed.
+    pub fn slug(&self) -> Result<String, String> {
+        match self.manifest.get("id") {
+            Some(Value::String(s)) if valid_slug(s) => Ok(s.clone()),
+            Some(v) => Err(format!(
+                "Invalid manifest: id must be lowercase letters, digits and single hyphens (e.g. color-picker), got {v}"
+            )),
+            None => Ok(slugify(&self.name()?)),
+        }
+    }
+
+    /// What the bundle holds, for the review step: (file, bytes).
+    pub fn files(&self) -> Vec<(&'static str, usize)> {
+        [
+            ("manifest.json", self.manifest.to_string().len()),
+            ("frontend/index.jsx", self.frontend.len()),
+            ("backend/index.js", self.backend.len()),
+            ("panel/index.jsx", self.panel.len()),
+            ("icon.svg", self.icon_svg.len()),
+        ]
+        .into_iter()
+        .filter(|(_, n)| *n > 0)
+        .collect()
+    }
+
+    pub fn name(&self) -> Result<String, String> {
+        self.manifest
+            .get("name")
+            .and_then(Value::as_str)
+            .map(str::to_string)
+            .filter(|n| !n.is_empty())
+            .ok_or_else(|| "Invalid manifest: missing name".into())
+    }
+}
+
 pub struct ImportResult {
     pub app: MiniApp,
+    pub files: Vec<(&'static str, usize)>,
     pub updated: bool,
 }
 
+pub const MAX_ZIP_BYTES: usize = 10 * 1024 * 1024;
+pub const MAX_FILE_BYTES: u64 = 2 * 1024 * 1024;
+
+/// Entries a mini app zip may hold: the shared layout, plus the pre-0.6 flat names.
+const ZIP_FILES: [&str; 9] = [
+    "manifest.json",
+    "frontend/index.jsx",
+    "backend/index.js",
+    "panel/index.jsx",
+    "icon.svg",
+    "frontend.js",
+    "backend.js",
+    "panel.js",
+    "README.md",
+];
+
 pub fn bundle_from_zip(bytes: &[u8]) -> Result<Bundle, String> {
+    if bytes.len() > MAX_ZIP_BYTES {
+        return Err(format!(
+            "Zip is too large ({} MB, limit {} MB)",
+            bytes.len() / 1024 / 1024,
+            MAX_ZIP_BYTES / 1024 / 1024
+        ));
+    }
     let mut zip =
         zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|e| format!("bad zip: {e}"))?;
-    let mut read = |file: &str| -> Option<String> {
-        let name = (0..zip.len()).find_map(|i| {
-            let n = zip.by_index(i).ok()?.name().to_string();
-            (n == file || n.ends_with(&format!("/{file}"))).then_some(n)
-        })?;
+
+    // Exactly one app per zip, optionally inside one top folder.
+    let mut files: Vec<(String, String)> = Vec::new(); // (entry name, path inside the app)
+    let mut unexpected = Vec::new();
+    for i in 0..zip.len() {
+        let f = zip.by_index(i).map_err(|e| format!("bad zip: {e}"))?;
+        let name = f.name().to_string();
+        if f.is_dir()
+            || name.starts_with("__MACOSX/")
+            || name.rsplit('/').next() == Some(".DS_Store")
+        {
+            continue;
+        }
+        let rel = ZIP_FILES
+            .iter()
+            .find(|p| name == **p || name.ends_with(&format!("/{p}")));
+        match rel {
+            // Only a single top folder is allowed ("todo/manifest.json"), not deeper.
+            Some(p) if name.matches('/').count() <= p.matches('/').count() + 1 => {
+                files.push((name, (*p).to_string()))
+            }
+            _ => unexpected.push(name),
+        }
+    }
+    if !unexpected.is_empty() {
+        return Err(format!(
+            "Unexpected file(s) in the zip: {}. A mini app zip holds only: manifest.json, \
+             frontend/index.jsx, backend/index.js, panel/index.jsx, icon.svg",
+            unexpected.join(", ")
+        ));
+    }
+    let mut read = |paths: &[&str]| -> Result<String, String> {
+        let Some((name, _)) = files.iter().find(|(_, p)| paths.contains(&p.as_str())) else {
+            return Ok(String::new());
+        };
         let mut s = String::new();
-        zip.by_name(&name).ok()?.read_to_string(&mut s).ok()?;
-        Some(s)
+        zip.by_name(name)
+            .map_err(|e| e.to_string())?
+            .take(MAX_FILE_BYTES + 1)
+            .read_to_string(&mut s)
+            .map_err(|e| format!("{name}: {e}"))?;
+        Ok(s)
     };
-    let manifest = read("manifest.json").ok_or("Invalid mini app: missing manifest.json")?;
+    let manifest = read(&["manifest.json"])?;
+    if manifest.is_empty() {
+        return Err("Invalid mini app: missing manifest.json".into());
+    }
     Ok(Bundle {
         manifest: serde_json::from_str(&manifest).map_err(|e| format!("manifest.json: {e}"))?,
-        frontend: read("frontend.js").unwrap_or_default(),
-        backend: read("backend.js").unwrap_or_default(),
-        panel: read("panel.js").unwrap_or_default(),
-        icon_svg: read("icon.svg").unwrap_or_default(),
+        frontend: read(&["frontend/index.jsx", "frontend.js"])?,
+        backend: read(&["backend/index.js", "backend.js"])?,
+        panel: read(&["panel/index.jsx", "panel.js"])?,
+        icon_svg: read(&["icon.svg"])?,
     })
 }
 
@@ -750,7 +978,8 @@ pub fn bundle_from_dir(dir: &Path) -> Result<Bundle, String> {
 }
 
 /// Create the app, or update it in place if one with the same name exists.
-pub fn import_bundle(b: Bundle) -> Result<ImportResult, String> {
+pub fn import_bundle(b: Bundle, force: bool) -> Result<ImportResult, String> {
+    b.validate()?;
     let m = &b.manifest;
     let s = |k: &str| {
         m.get(k)
@@ -759,12 +988,18 @@ pub fn import_bundle(b: Bundle) -> Result<ImportResult, String> {
             .filter(|v| !v.is_empty())
     };
     let name = s("name").ok_or("Invalid manifest: missing name")?;
-    if b.frontend.trim().is_empty() && b.backend.trim().is_empty() {
-        return Err("Invalid mini app: must have a frontend or a backend".into());
-    }
+    let files = b.files();
     let schema = m.get("config").filter(|v| v.is_object()).cloned();
 
-    let result = if let Some(existing) = find_by_name(&name)? {
+    let slug = b.slug()?;
+    let result = if let Some(existing) = find_by_slug(&slug)? {
+        if !force {
+            return Err(format!(
+                "A mini app with the id \"{}\" already exists (\"{}\"). Importing would overwrite its code; \
+                 pass --force to do that.",
+                existing.slug, existing.name
+            ));
+        }
         let app = update(
             &existing.id,
             &UpdateInput {
@@ -779,10 +1014,15 @@ pub fn import_bundle(b: Bundle) -> Result<ImportResult, String> {
                 ..Default::default()
             },
         )?;
-        ImportResult { app, updated: true }
+        ImportResult {
+            app,
+            updated: true,
+            files,
+        }
     } else {
         let app = create(&CreateInput {
             name,
+            slug: Some(slug),
             description: s("description"),
             icon: s("icon"),
             category: s("category"),
@@ -796,6 +1036,7 @@ pub fn import_bundle(b: Bundle) -> Result<ImportResult, String> {
         ImportResult {
             app,
             updated: false,
+            files,
         }
     };
     if let Some(schema) = schema {
@@ -805,32 +1046,37 @@ pub fn import_bundle(b: Bundle) -> Result<ImportResult, String> {
     Ok(result)
 }
 
-pub fn export_zip(id: &str) -> Result<Vec<u8>, String> {
+/// The files of an app in the shared layout, used by the zip export and by
+/// marketplaces: manifest.json, frontend/index.jsx, backend/index.js,
+/// panel/index.jsx, icon.svg (empty ones left out).
+pub fn bundle_files(id: &str) -> Result<Vec<(&'static str, String)>, String> {
     let app = require(id)?;
     let code = read_code(id);
+    let files = [
+        (
+            "manifest.json",
+            serde_json::to_string_pretty(&manifest_value(&app)).unwrap_or_default(),
+        ),
+        ("frontend/index.jsx", code.frontend_code),
+        ("backend/index.js", code.backend_code),
+        ("panel/index.jsx", code.panel_code.unwrap_or_default()),
+        ("icon.svg", read_icon_svg(id).unwrap_or_default()),
+    ];
+    Ok(files
+        .into_iter()
+        .filter(|(_, c)| !c.trim().is_empty())
+        .collect())
+}
+
+pub fn export_zip(id: &str) -> Result<Vec<u8>, String> {
     let mut buf = std::io::Cursor::new(Vec::new());
     {
         let mut zip = zip::ZipWriter::new(&mut buf);
         let opts = zip::write::SimpleFileOptions::default();
-        let mut add = |name: &str, content: &str| -> Result<(), String> {
+        for (name, content) in bundle_files(id)? {
             zip.start_file(name, opts).map_err(|e| e.to_string())?;
-            zip.write_all(content.as_bytes()).map_err(|e| e.to_string())
-        };
-        add(
-            "manifest.json",
-            &serde_json::to_string_pretty(&manifest_value(&app)).unwrap_or_default(),
-        )?;
-        if !code.frontend_code.is_empty() {
-            add("frontend.js", &code.frontend_code)?;
-        }
-        if !code.backend_code.is_empty() {
-            add("backend.js", &code.backend_code)?;
-        }
-        if let Some(p) = &code.panel_code {
-            add("panel.js", p)?;
-        }
-        if let Some(svg) = read_icon_svg(id) {
-            add("icon.svg", &svg)?;
+            zip.write_all(content.as_bytes())
+                .map_err(|e| e.to_string())?;
         }
         zip.finish().map_err(|e| e.to_string())?;
     }
@@ -888,5 +1134,96 @@ mod tests {
         ] {
             assert!(validate_svg_icon(bad).is_err(), "{bad}");
         }
+    }
+}
+
+fn is_semver(v: &str) -> bool {
+    let core = v.split(['-', '+']).next().unwrap_or("");
+    let parts: Vec<&str> = core.split('.').collect();
+    parts.len() == 3
+        && parts
+            .iter()
+            .all(|p| !p.is_empty() && p.chars().all(|c| c.is_ascii_digit()))
+}
+
+#[cfg(test)]
+mod zip_tests {
+    use super::*;
+
+    fn zip_of(files: &[(&str, &str)]) -> Vec<u8> {
+        let mut buf = std::io::Cursor::new(Vec::new());
+        {
+            let mut z = zip::ZipWriter::new(&mut buf);
+            for (n, c) in files {
+                z.start_file(*n, zip::write::SimpleFileOptions::default())
+                    .unwrap();
+                z.write_all(c.as_bytes()).unwrap();
+            }
+            z.finish().unwrap();
+        }
+        buf.into_inner()
+    }
+
+    const M: &str = r#"{"id":"a","name":"A","version":"1.0.0"}"#;
+
+    #[test]
+    fn reads_shared_layout_and_top_folder_and_legacy() {
+        for files in [
+            vec![("manifest.json", M), ("frontend/index.jsx", "x")],
+            vec![("a/manifest.json", M), ("a/frontend/index.jsx", "x")],
+            vec![("manifest.json", M), ("frontend.js", "x")],
+        ] {
+            let b = bundle_from_zip(&zip_of(&files)).unwrap();
+            b.validate().unwrap();
+        }
+    }
+
+    #[test]
+    fn slugs() {
+        assert_eq!(slugify("Color Picker!"), "color-picker");
+        assert_eq!(slugify("!!!"), "app");
+        assert!(valid_slug("color-picker"));
+        for bad in ["", "-a", "a-", "a--b", "A", "a_b", "a/b"] {
+            assert!(!valid_slug(bad), "{bad}");
+        }
+        let b = bundle_from_zip(&zip_of(&[
+            (
+                "manifest.json",
+                r#"{"id":"Bad_Id","name":"A","version":"1.0.0"}"#,
+            ),
+            ("frontend/index.jsx", "x"),
+        ]))
+        .unwrap();
+        assert!(b.validate().is_err());
+    }
+
+    #[test]
+    fn rejects_bad_zips() {
+        let bad = [
+            vec![("frontend/index.jsx", "x")],
+            vec![
+                ("manifest.json", M),
+                ("frontend/index.jsx", "x"),
+                ("evil.sh", "x"),
+            ],
+            vec![("manifest.json", M), ("a/b/frontend/index.jsx", "x")],
+        ];
+        for files in bad {
+            assert!(bundle_from_zip(&zip_of(&files)).is_err());
+        }
+        let b = bundle_from_zip(&zip_of(&[
+            ("manifest.json", r#"{"name":"A","version":"one"}"#),
+            ("frontend/index.jsx", "x"),
+        ]))
+        .unwrap();
+        assert!(b.validate().is_err());
+        let no_version = bundle_from_zip(&zip_of(&[
+            ("manifest.json", r#"{"name":"A"}"#),
+            ("frontend/index.jsx", "x"),
+        ]))
+        .unwrap();
+        assert!(no_version.validate().is_err());
+        let empty = bundle_from_zip(&zip_of(&[("manifest.json", M)])).unwrap();
+        assert!(empty.validate().is_err());
     }
 }

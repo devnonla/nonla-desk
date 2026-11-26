@@ -58,7 +58,44 @@ pub fn init() -> anyhow::Result<()> {
     conn.pragma_update(None, "journal_mode", "WAL")?;
     conn.pragma_update(None, "foreign_keys", "ON")?;
     conn.execute_batch(SCHEMA)?;
+    ensure_slugs(&conn)?;
     let _ = DB.set(Mutex::new(conn));
+    Ok(())
+}
+
+/// `slug` is the app\'s unique, human id (like a plugin name). Added after the
+/// first release, so older databases get the column and a slug per app.
+fn ensure_slugs(conn: &Connection) -> rusqlite::Result<()> {
+    let has: bool = conn
+        .prepare("PRAGMA table_info(mini_apps)")?
+        .query_map([], |r| r.get::<_, String>(1))?
+        .any(|n| n.is_ok_and(|n| n == "slug"));
+    if !has {
+        conn.execute("ALTER TABLE mini_apps ADD COLUMN slug TEXT", [])?;
+    }
+    let todo: Vec<(String, String)> = conn
+        .prepare("SELECT id, name FROM mini_apps WHERE slug IS NULL ORDER BY created_at")?
+        .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?
+        .collect::<Result<_, _>>()?;
+    for (id, name) in todo {
+        let base = crate::miniapp::slugify(&name);
+        let mut slug = base.clone();
+        let mut n = 2;
+        while conn.query_row(
+            "SELECT COUNT(*) FROM mini_apps WHERE slug = ?1",
+            [&slug],
+            |r| r.get::<_, i64>(0),
+        )? > 0
+        {
+            slug = format!("{base}-{n}");
+            n += 1;
+        }
+        conn.execute("UPDATE mini_apps SET slug = ?1 WHERE id = ?2", [&slug, &id])?;
+    }
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_mini_apps_slug ON mini_apps(slug)",
+        [],
+    )?;
     Ok(())
 }
 
@@ -87,4 +124,30 @@ pub fn with<T>(f: impl FnOnce(&Connection) -> rusqlite::Result<T>) -> Result<T, 
         .lock()
         .map_err(|_| "database lock poisoned".to_string())?;
     f(&conn).map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn adds_unique_slugs_to_an_old_database() {
+        let c = Connection::open_in_memory().unwrap();
+        // The first-release table, without `slug`.
+        c.execute_batch(
+            "CREATE TABLE mini_apps (id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at TEXT NOT NULL);
+             INSERT INTO mini_apps VALUES ('1', 'Color Picker', '1'), ('2', 'Color-Picker', '2'), ('3', '日本', '3');",
+        )
+        .unwrap();
+        ensure_slugs(&c).unwrap();
+        ensure_slugs(&c).unwrap(); // idempotent
+        let slugs: Vec<String> = c
+            .prepare("SELECT slug FROM mini_apps ORDER BY id")
+            .unwrap()
+            .query_map([], |r| r.get(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
+        assert_eq!(slugs, ["color-picker", "color-picker-2", "app"]);
+    }
 }

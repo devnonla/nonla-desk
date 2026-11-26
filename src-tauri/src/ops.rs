@@ -214,7 +214,11 @@ pub async fn reload(app: &AppHandle, id: &str) -> Result<MiniApp, String> {
 }
 
 pub async fn import(app: &AppHandle, result: ImportResult) -> Value {
-    let ImportResult { app: rec, updated } = result;
+    let ImportResult {
+        app: rec,
+        updated,
+        files,
+    } = result;
     if rec.enabled {
         backend::stop(&rec.id).await;
         spawn_start(app, rec.clone());
@@ -229,5 +233,11 @@ pub async fn import(app: &AppHandle, result: ImportResult) -> Value {
             metadata_changed: Some(true),
         },
     );
-    json!({ "id": rec.id, "name": rec.name, "updated": updated })
+    json!({
+        "id": rec.id,
+        "name": rec.name,
+        "slug": rec.slug,
+        "updated": updated,
+        "files": files.iter().map(|(p, n)| json!({ "path": p, "bytes": n })).collect::<Vec<_>>(),
+    })
 }

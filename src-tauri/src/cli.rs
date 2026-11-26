@@ -13,7 +13,12 @@ use serde_json::{json, Map, Value};
 
 use crate::paths;
 
-const GUIDE: &str = include_str!("../../plugins/nonla-desk/skills/nonla-desk/references/guide.md");
+const GUIDE_DEVELOP: &str =
+    include_str!("../../plugins/nonla-desk/skills/nonla-desk/references/develop.md");
+const GUIDE_ICON: &str =
+    include_str!("../../plugins/nonla-desk/skills/nonla-desk/references/icon.md");
+const GUIDE_SHARE: &str =
+    include_str!("../../plugins/nonla-desk/skills/nonla-desk/references/share.md");
 
 #[derive(Parser)]
 #[command(
@@ -54,6 +59,9 @@ enum Cmd {
     /// Create a new mini app (created disabled)
     Create {
         name: String,
+        /// Unique id, lowercase with hyphens (default: derived from the name), e.g. color-picker
+        #[arg(long)]
+        id: Option<String>,
         /// Frontend source file (.jsx). A starter component is used if omitted.
         #[arg(long)]
         frontend: Option<PathBuf>,
@@ -149,8 +157,13 @@ enum Cmd {
     },
     /// Remove an app's standalone macOS app (the mini app itself stays)
     Uninstall { app: String },
-    /// Import a mini app from a .zip or a directory
-    Import { path: PathBuf },
+    /// Import a mini app from a .zip or a directory (it stays disabled; refuses to overwrite an app of the same name)
+    Import {
+        path: PathBuf,
+        /// Overwrite an existing app of the same name
+        #[arg(long)]
+        force: bool,
+    },
     /// Export an app as a .zip
     Export {
         app: String,
@@ -159,8 +172,11 @@ enum Cmd {
     },
     /// App version, JS runtime (Bun/Node) and paths
     Status,
-    /// Print the mini app development guide
-    Guide,
+    /// Print a guide: develop (default), icon or share
+    Guide {
+        #[arg(value_parser = ["develop", "icon", "share"])]
+        topic: Option<String>,
+    },
 }
 
 /// True when this process should act as the CLI rather than the app.
@@ -242,8 +258,15 @@ fn execute(cli: &Cli) -> Result<i32, String> {
     };
 
     match &cli.command {
-        Cmd::Guide => {
-            print!("{GUIDE}");
+        Cmd::Guide { topic } => {
+            print!(
+                "{}",
+                match topic.as_deref() {
+                    Some("icon") => GUIDE_ICON,
+                    Some("share") => GUIDE_SHARE,
+                    _ => GUIDE_DEVELOP,
+                }
+            );
             Ok(0)
         }
         Cmd::List => {
@@ -271,6 +294,7 @@ fn execute(cli: &Cli) -> Result<i32, String> {
         }
         Cmd::Create {
             name,
+            id: slug,
             frontend,
             backend,
             panel,
@@ -284,6 +308,9 @@ fn execute(cli: &Cli) -> Result<i32, String> {
             let mut args = Map::new();
             icon_args(&mut args, icon.as_deref(), icon_file.as_deref())?;
             args.insert("name".into(), name.clone().into());
+            if let Some(s) = slug {
+                args.insert("id".into(), s.clone().into());
+            }
             for (k, p) in [
                 ("frontend", frontend),
                 ("backend", backend),
@@ -329,7 +356,8 @@ fn execute(cli: &Cli) -> Result<i32, String> {
                     code = 2;
                 }
             } else if !cli.json {
-                println!("Next: nonladesk check {id} && nonladesk enable {id}");
+                let sid = created["slug"].as_str().unwrap_or(&id);
+                println!("Next: nonladesk check {sid} && nonladesk enable {sid}");
             }
             if cli.json {
                 println!(
@@ -475,8 +503,8 @@ fn execute(cli: &Cli) -> Result<i32, String> {
             });
             Ok(0)
         }
-        Cmd::Import { path } => {
-            let v = call("import", json!({ "path": absolute(path) }))?;
+        Cmd::Import { path, force } => {
+            let v = call("import", json!({ "path": absolute(path), "force": force }))?;
             out(&v, &|v| {
                 let verb = if v["updated"].as_bool() == Some(true) {
                     "Updated"
@@ -486,7 +514,19 @@ fn execute(cli: &Cli) -> Result<i32, String> {
                 println!(
                     "{verb} \"{}\" ({}).",
                     v["name"].as_str().unwrap_or_default(),
-                    v["id"].as_str().unwrap_or_default()
+                    v["slug"].as_str().unwrap_or_default()
+                );
+                for f in v["files"].as_array().into_iter().flatten() {
+                    println!(
+                        "  {} ({} bytes)",
+                        f["path"].as_str().unwrap_or_default(),
+                        f["bytes"]
+                    );
+                }
+                println!(
+                    "It is disabled. Read its code (`nonladesk path {id}`), run `nonladesk check {id}`, \
+                     then `nonladesk enable {id}`.",
+                    id = v["slug"].as_str().unwrap_or_default()
                 );
             });
             Ok(0)
@@ -586,11 +626,20 @@ fn print_list(v: &Value) {
         .max()
         .unwrap_or(4)
         .max(4);
-    println!("{:<16}  {:<width$}  {:<8}  FILES", "ID", "NAME", "STATE");
+    let id_width = apps
+        .iter()
+        .map(|a| a["slug"].as_str().unwrap_or_default().chars().count())
+        .max()
+        .unwrap_or(2)
+        .max(2);
+    println!(
+        "{:<id_width$}  {:<width$}  {:<8}  FILES",
+        "ID", "NAME", "STATE"
+    );
     for a in apps {
         println!(
-            "{:<16}  {:<width$}  {:<8}  {}",
-            a["id"].as_str().unwrap_or_default(),
+            "{:<id_width$}  {:<width$}  {:<8}  {}",
+            a["slug"].as_str().unwrap_or_default(),
             a["name"].as_str().unwrap_or_default(),
             state(&a),
             parts(&a)
