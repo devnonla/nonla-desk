@@ -258,6 +258,14 @@ pub fn update(name: Option<&str>) -> Result<Value, String> {
     let mut res = Vec::new();
     for n in names {
         let dir = market_dir(&n)?;
+        // `market publish` writes into the clone: never wipe work that is not pushed yet.
+        if git(Some(&dir), &["status", "--porcelain"]).is_ok_and(|s| !s.is_empty()) {
+            res.push(json!({
+                "name": n,
+                "error": "has uncommitted changes (published apps?). Commit and push them from its folder first",
+            }));
+            continue;
+        }
         let before = git(Some(&dir), &["rev-parse", "HEAD"]).unwrap_or_default();
         // The clone is ours: follow the remote even after a force-push.
         let pulled = git(Some(&dir), &["fetch", "--depth", "1", "origin"])
