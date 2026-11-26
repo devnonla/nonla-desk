@@ -1,8 +1,8 @@
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react'
 import { loadGeometry } from '@/lib/window-geometry'
 
-/** What a desktop window shows: a running mini app, or its read-only details. */
-export type WindowKind = 'app' | 'info'
+/** What a desktop window shows: a running mini app, its read-only details, or the Nonla Desk page. */
+export type WindowKind = 'app' | 'info' | 'about'
 
 export interface DeskWindow {
   key: string
@@ -27,7 +27,7 @@ interface WindowsApi {
 
 const WindowsContext = createContext<WindowsApi | null>(null)
 
-const windowKey = (kind: WindowKind, appId?: string) => `${kind}:${appId}`
+const windowKey = (kind: WindowKind, appId?: string) => `${kind}:${appId ?? ''}`
 
 /** Move one window to the top of the stack. */
 function raise(list: DeskWindow[], key: string) {

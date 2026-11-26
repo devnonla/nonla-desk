@@ -101,9 +101,13 @@ fn create_menu(app: &AppHandle) -> tauri::Result<()> {
         .accelerator("CmdOrCtrl+B")
         .build(app)?;
     let learn = MenuItemBuilder::with_id("learn", "Learn More").build(app)?;
+    let import = MenuItemBuilder::with_id("import", "Import Mini App…")
+        .accelerator("CmdOrCtrl+O")
+        .build(app)?;
 
+    let about = MenuItemBuilder::with_id("about", "About Nonla Desk").build(app)?;
     let app_menu = SubmenuBuilder::new(app, "Nonla Desk")
-        .about(None)
+        .item(&about)
         .separator()
         .services()
         .separator()
@@ -113,6 +117,7 @@ fn create_menu(app: &AppHandle) -> tauri::Result<()> {
         .separator()
         .quit()
         .build()?;
+    let file = SubmenuBuilder::new(app, "File").item(&import).build()?;
     let edit = SubmenuBuilder::new(app, "Edit")
         .undo()
         .redo()
@@ -136,11 +141,13 @@ fn create_menu(app: &AppHandle) -> tauri::Result<()> {
     let help = SubmenuBuilder::new(app, "Help").item(&learn).build()?;
 
     let menu = MenuBuilder::new(app)
-        .items(&[&app_menu, &edit, &view, &window, &help])
+        .items(&[&app_menu, &file, &edit, &view, &window, &help])
         .build()?;
     app.set_menu(menu)?;
     app.on_menu_event(|app, e| match e.id().as_ref() {
         "home" => navigate(app, ""),
+        "import" => navigate(app, "import"),
+        "about" => navigate(app, "about"),
         "learn" => {
             use tauri_plugin_opener::OpenerExt;
             let _ = app
@@ -171,7 +178,8 @@ pub fn create_tray_panel(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         .always_on_top(true)
         .skip_taskbar(true)
         .visible_on_all_workspaces(true)
-        .shadow(true)
+        // No system shadow: it adds a light border line around the rounded wallpaper.
+        .shadow(false)
         .transparent(true)
         .build()?;
 

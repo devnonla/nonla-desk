@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import desktopBackground from '@/assets/desktop-bg.jpg'
 import { api } from '@/lib/api'
 import { useWindows } from '../../hooks/useWindows'
+import { AboutIcon } from '../desktop/AboutIcon'
 import { DesktopClock } from '../desktop/DesktopClock'
 import { DesktopCommandPalette } from '../desktop/DesktopCommandPalette'
 import { DesktopIcon } from '../desktop/DesktopIcon'
@@ -155,6 +156,13 @@ export default function Dashboard({ apps, loading, loadApps }: DashboardProps) {
     if (file) await importZipFile(file)
   }
 
+  // File ▸ Import Mini App… in the menu bar (App.tsx forwards the route).
+  useEffect(() => {
+    const onImport = () => fileInputRef.current?.click()
+    window.addEventListener('nonla:import', onImport)
+    return () => window.removeEventListener('nonla:import', onImport)
+  }, [])
+
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -228,16 +236,14 @@ export default function Dashboard({ apps, loading, loadApps }: DashboardProps) {
       {/* Always on the desktop, behind windows: closing a window never makes it pop in. */}
       {apps.length > 0 ? <DesktopClock /> : null}
 
-      <TopBar
-        onSearch={() => setIsCommandPaletteOpen(true)}
-        onImport={() => fileInputRef.current?.click()}
-      />
+      <TopBar />
 
       {/* Icons fill columns top to bottom, then wrap to the right. */}
       <nav
         aria-label="Mini apps"
         className="absolute inset-x-0 top-11 bottom-0 z-20 px-3 py-4 flex flex-col flex-wrap content-start items-start gap-x-1 gap-y-3 overflow-x-auto"
       >
+        <AboutIcon active={windows.some((w) => w.kind === 'about')} onOpen={() => open('about')} />
         {loading ? <span className="sr-only">Loading apps…</span> : apps.map(renderAppIcon)}
       </nav>
 

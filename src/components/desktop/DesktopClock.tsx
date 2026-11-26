@@ -14,8 +14,11 @@ function greeting(hour: number) {
   return 'Good evening'
 }
 
-/** Large clock in the middle of the idle desktop. Windows open on top of it. */
-export function DesktopClock() {
+/**
+ * Large clock in the middle of the idle desktop. Windows open on top of it.
+ * `compact` fills its parent instead (the menu bar panel when it has no apps).
+ */
+export function DesktopClock({ compact = false }: { compact?: boolean }) {
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 10_000)
@@ -25,12 +28,16 @@ export function DesktopClock() {
   return (
     <div
       aria-hidden="true"
-      className="absolute inset-x-0 top-[18%] z-10 flex flex-col items-center gap-1 pointer-events-none select-none"
+      className={`flex flex-col items-center gap-1 pointer-events-none select-none ${
+        compact ? 'h-full justify-center pb-6' : 'absolute inset-x-0 top-[18%] z-10'
+      }`}
     >
       <span className="text-[13px] font-semibold tracking-[2.5px] uppercase text-white/90 [text-shadow:0_1px_8px_rgba(80,40,10,0.45)]">
         {greeting(now.getHours())}
       </span>
-      <span className="text-[88px] leading-none font-extralight tracking-[-3px] tabular-nums text-white [text-shadow:0_2px_24px_rgba(80,40,10,0.35)]">
+      <span
+        className={`${compact ? 'text-[64px]' : 'text-[88px]'} leading-none font-extralight tracking-[-3px] tabular-nums text-white [text-shadow:0_2px_24px_rgba(80,40,10,0.35)]`}
+      >
         {timeFormat.format(now)}
       </span>
       <span className="text-[15px] font-medium text-white/90 [text-shadow:0_1px_8px_rgba(80,40,10,0.45)]">

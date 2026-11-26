@@ -236,6 +236,7 @@ export const api = {
   getUpdateInfo: () =>
     invoke<{ version: string; supported: boolean; pending: string | null }>('update_info'),
   checkForUpdates: () => invoke<void>('check_for_updates'),
+  openUrl: (url: string) => invoke<void>('plugin:opener|open_url', { url }),
   /** A newer version was found (its number) or the pending one is gone (null). */
   onUpdatePending: (callback: (version: string | null) => void) =>
     on<string | null>('update:pending', callback),

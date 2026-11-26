@@ -65,7 +65,7 @@ Same model as open-agent-hands. `tauri-plugin-updater` is compiled in only when 
 
 ## Conventions
 
-- **UI follows `.cursor/DESIGN.md`** and uses devnonla-ui components (`Card`, `Button`, `CommandPalette`, `Modal.confirm`, `message`, …) before custom ones. Theme overrides live on `.nonla-ui.light` in `src/assets/index.css`. `--color-*` tokens on `:root` are kept because mini apps use them.
+- **UI uses devnonla-ui components** (`Card`, `Button`, `CommandPalette`, `Modal.confirm`, `message`, …) before custom ones; the look is a cream canvas with an amber accent. Theme overrides live on `.nonla-ui.light` in `src/assets/index.css`. `--color-*` tokens on `:root` are kept because mini apps use them.
 - **No hand-written CSS; Tailwind only.** Window dragging uses `data-tauri-drag-region`, not `-webkit-app-region`.
 - `@/` resolves to `src/`. Biome: 2-space indent, single quotes, semicolons as needed, 100 columns.
 - Conventional Commits with scopes like `feat(core)`, `feat(cli)`, `feat(web)`, `fix(updater)`. Releases are `chore: release vX.Y.Z` and bump `package.json`; bump `plugin.json` when the plugin changed.

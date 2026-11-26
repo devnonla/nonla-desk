@@ -6,7 +6,7 @@
 /* Mini apps are eval'd at runtime, so their classes come from this list. */
 @source "../lib/miniapp-tailwind-safelist.ts";
 
-/* devnonla-ui host, tuned to .cursor/DESIGN.md: cream canvas, amber accent. */
+/* devnonla-ui host: cream canvas, amber accent. */
 .nonla-ui.light {
   --nonla-bg: #eeefe9;
   --nonla-surface: #ffffff;

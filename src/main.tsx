@@ -19,7 +19,7 @@ exposeHost({
   jsxRuntime,
 })
 
-// The desktop is light-only (see .cursor/DESIGN.md).
+// The desktop is light-only.
 setColorPreference('light')
 
 // Mini apps can use data-aos attributes for entrance animations.

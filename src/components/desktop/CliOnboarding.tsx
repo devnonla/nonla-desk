@@ -2,10 +2,10 @@ import { CodeBlock, Paragraph, Title } from 'devnonla-ui'
 import { useId } from 'react'
 import AppLogo from '../ui/AppLogo'
 
-const CLAUDE_CODE = `/plugin marketplace add devnonla/nonla-desk
+export const CLAUDE_CODE = `/plugin marketplace add devnonla/nonla-desk
 /plugin install nonla-desk@nonla-desk`
 
-const OTHER_AGENTS =
+export const OTHER_AGENTS =
   'Use the `nonladesk` CLI to build Nonla Desk mini apps. Run `nonladesk guide` first.'
 
 /** Shown on an empty desktop: an agent writes mini apps through the `nonladesk` CLI. */

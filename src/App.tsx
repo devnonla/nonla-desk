@@ -12,6 +12,7 @@ import { type DeskWindow, useWindows, WindowsProvider } from './hooks/useWindows
 const loadRenderer = () => import('./components/tools/MiniAppRenderer')
 const MiniAppRenderer = lazy(loadRenderer)
 const MiniAppViewer = lazy(() => import('./components/tools/MiniAppViewer'))
+const AboutWindow = lazy(() => import('./components/tools/AboutWindow'))
 
 function WindowFallback() {
   return (
@@ -27,6 +28,7 @@ export interface MiniAppInfo extends AppItem {
 }
 
 function windowLabel(w: DeskWindow, app: MiniAppInfo | undefined) {
+  if (w.kind === 'about') return { title: 'Nonla Desk', icon: undefined, iconSvg: null }
   const name = app?.name ?? 'Mini app'
   return {
     title: w.kind === 'info' ? `${name} — Details` : name,
@@ -71,6 +73,14 @@ function AppShell() {
   miniAppsRef.current = miniApps
   useEffect(() => {
     return api.onNavigateTool(async (tool: string) => {
+      if (tool === 'about') {
+        open('about')
+        return
+      }
+      if (tool === 'import') {
+        window.dispatchEvent(new Event('nonla:import'))
+        return
+      }
       if (!tool.startsWith('mini/')) return
       const id = tool.slice('mini/'.length)
       let app = miniAppsRef.current.find((a) => a.id === id)
@@ -117,14 +127,16 @@ function AppShell() {
                 focused={focused?.key === w.key}
                 slot={w.slot}
                 persistKey={w.key}
-                originId={w.appId}
+                originId={w.kind === 'about' ? 'nonla-about' : w.appId}
                 onFocus={() => focus(w.key)}
                 onClose={() => close(w.key)}
                 onToggleExpand={() => toggleExpand(w.key)}
               >
                 <div className="h-full overflow-hidden">
                   <Suspense fallback={<WindowFallback />}>
-                    {w.kind === 'app' && w.appId ? (
+                    {w.kind === 'about' ? (
+                      <AboutWindow />
+                    ) : w.kind === 'app' && w.appId ? (
                       <MiniAppRenderer appId={w.appId} />
                     ) : (
                       <MiniAppViewer appId={w.appId ?? ''} />

@@ -17,18 +17,18 @@ interface DesktopIconProps {
   onDelete: () => void
 }
 
-const iconButtonClass =
+export const iconButtonClass =
   'group w-22 flex flex-col items-center gap-1.5 pt-2 pb-1.5 px-1 rounded-lg border-none cursor-pointer select-none outline-none bg-transparent focus-visible:outline-2 focus-visible:outline-white/80'
 
 /** macOS desktop style: white text with a soft shadow, no selection highlight. */
-function labelClass(muted: boolean) {
+export function labelClass(muted: boolean) {
   return `max-w-full px-1.5 text-[12px] leading-4 font-medium text-center line-clamp-2 [text-shadow:0_1px_2px_rgba(0,0,0,0.65),0_0_6px_rgba(0,0,0,0.35)] ${
     muted ? 'text-white/70' : 'text-white'
   }`
 }
 
 /** SVG icons bring their own shape and background; named icons sit on a white tile. */
-function plateClass(svg: boolean) {
+export function plateClass(svg: boolean) {
   const look = svg
     ? 'drop-shadow-[0_3px_6px_rgba(0,0,0,0.22)]'
     : 'rounded-[11px] bg-white border border-black/6 shadow-[0_3px_6px_rgba(0,0,0,0.18)]'
