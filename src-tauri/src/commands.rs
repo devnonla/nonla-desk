@@ -33,6 +33,18 @@ pub async fn check_for_updates(app: AppHandle) {
     updater::check(app, true).await;
 }
 
+/// Installed marketplace apps that have a newer version. `refresh` fetches the
+/// marketplaces first (network); otherwise it reads what was fetched last.
+#[tauri::command]
+pub async fn market_outdated(app: AppHandle, refresh: bool) -> Result<Value, String> {
+    if refresh {
+        ops::refresh_markets(&app).await;
+    }
+    tauri::async_runtime::spawn_blocking(|| crate::market::outdated_local(None))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 pub fn list_mini_apps() -> Result<Vec<Value>, String> {
     let native = bundle::installed_ids();

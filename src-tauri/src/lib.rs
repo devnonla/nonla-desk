@@ -61,6 +61,7 @@ pub fn run() {
                 cli::ensure_link();
             }
             updater::start_checks(&handle);
+            ops::start_market_checks(&handle);
             let bundles = handle.clone();
             std::thread::spawn(move || bundle::refresh_outdated(&bundles));
             tauri::async_runtime::spawn(async move { ops::load_all(&handle).await });
@@ -70,6 +71,7 @@ pub fn run() {
             commands::app_version,
             commands::update_info,
             commands::check_for_updates,
+            commands::market_outdated,
             commands::list_mini_apps,
             commands::get_mini_app,
             commands::create_mini_app,

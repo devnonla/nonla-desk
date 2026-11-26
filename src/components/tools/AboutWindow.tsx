@@ -1,8 +1,10 @@
 import { Button, CodeBlock, Kbd, Paragraph, Title } from 'devnonla-ui'
 import { useEffect, useState } from 'react'
-import { api } from '@/lib/api'
+import { useMarketUpdates } from '@/hooks/useMarketUpdates'
+import { api, type MarketUpdate } from '@/lib/api'
 import { CLAUDE_CODE, OTHER_AGENTS } from '../desktop/CliOnboarding'
 import AppLogo from '../ui/AppLogo'
+import { toast } from '../ui/Toast'
 
 const REPO = 'https://github.com/devnonla/nonla-desk'
 
@@ -21,6 +23,65 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       </h3>
       {children}
     </section>
+  )
+}
+
+/** What to paste to the agent: review this one update, then install it only after a yes. */
+const reviewPrompt = (u: MarketUpdate) =>
+  `Use the nonla-market skill to review the update of the mini app ${u.name}@${u.market} ` +
+  `(installed ${u.installed}, new ${u.version}): run \`nonladesk market diff ${u.name}@${u.market}\`, ` +
+  'read every change, tell me what changed and any risk, and update only this app after I say yes.'
+
+function MiniAppUpdates() {
+  const { markets, updates, checking, check } = useMarketUpdates()
+
+  const copy = async (u: MarketUpdate) => {
+    try {
+      await navigator.clipboard.writeText(reviewPrompt(u))
+      toast.success('Copied. Paste it to your agent.')
+    } catch {
+      toast.error('Could not copy to the clipboard')
+    }
+  }
+
+  return (
+    <Section title="Mini app updates">
+      {markets === 0 ? (
+        <Paragraph className="text-muted-foreground">
+          No marketplace added. Add one with <code>nonladesk market add devnonla/nonla-desk</code>{' '}
+          (or any <code>user/repo</code>), then install apps with your agent.
+        </Paragraph>
+      ) : (
+        <div className="flex flex-col rounded-lg border border-border">
+          {updates.map((u) => (
+            <div
+              key={`${u.market}/${u.name}`}
+              className="flex items-center justify-between gap-3 border-b border-border px-4 py-3"
+            >
+              <div className="flex flex-col min-w-0">
+                <span className="truncate text-[13px] font-medium text-(--color-ink)">
+                  {u.title || u.name}
+                </span>
+                <span className="truncate text-[12px] text-(--color-mute)">
+                  {u.name}@{u.market} · {u.installed} → {u.version}
+                </span>
+              </div>
+              <Button onClick={() => void copy(u)}>Copy review prompt</Button>
+            </div>
+          ))}
+          <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <span className="text-[13px] text-(--color-body)">
+              {updates.length === 0
+                ? 'Mini apps from your marketplaces are up to date.'
+                : 'Your agent reviews each update before it is installed.'}
+            </span>
+            <Button loading={checking} onClick={() => void check()}>
+              Check now
+            </Button>
+          </div>
+        </div>
+      )}
+    </Section>
   )
 }
 
@@ -90,6 +151,8 @@ export default function AboutWindow() {
             </div>
           </Section>
         )}
+
+        <MiniAppUpdates />
 
         <Section title="Build mini apps with your agent">
           <CodeBlock code={CLAUDE_CODE} title="Claude Code: add the skill" />

@@ -243,3 +243,26 @@ pub async fn import(app: &AppHandle, result: ImportResult) -> Value {
         "files": files.iter().map(|(p, n)| json!({ "path": p, "bytes": n })).collect::<Vec<_>>(),
     })
 }
+
+// ─── Marketplace update checks ───────────────────────────────────────────────
+
+const MARKET_FIRST_CHECK: std::time::Duration = std::time::Duration::from_secs(60);
+const MARKET_INTERVAL: std::time::Duration = std::time::Duration::from_secs(6 * 60 * 60);
+
+/// Refresh the marketplaces' app lists in the background (never installs
+/// anything) and tell the UI, which then asks `market_outdated` again.
+pub fn start_market_checks(app: &AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(MARKET_FIRST_CHECK).await;
+        loop {
+            refresh_markets(&app).await;
+            tokio::time::sleep(MARKET_INTERVAL).await;
+        }
+    });
+}
+
+pub async fn refresh_markets(app: &AppHandle) {
+    let _ = tauri::async_runtime::spawn_blocking(|| crate::market::update(None)).await;
+    let _ = app.emit("market:checked", ());
+}

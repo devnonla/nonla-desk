@@ -24,6 +24,19 @@ export interface MiniAppLogEvent {
   args: string[]
 }
 
+/** An installed app whose marketplace has a newer version. */
+export interface MarketUpdate {
+  /** The app id (`color-picker`). */
+  name: string
+  market: string
+  /** The newer version in the marketplace. */
+  version: string
+  /** The installed version. */
+  installed: string
+  appId: string
+  title: string
+}
+
 export interface CheckRequest {
   requestId: string
   files: { frontend?: string; backend?: string; panel?: string }
@@ -240,6 +253,14 @@ export const api = {
   /** A newer version was found (its number) or the pending one is gone (null). */
   onUpdatePending: (callback: (version: string | null) => void) =>
     on<string | null>('update:pending', callback),
+
+  // Marketplaces (src-tauri/src/market.rs). Nothing is installed from here:
+  // updates are reviewed by the user's agent (`nonladesk market diff`).
+  /** Installed marketplace apps with a newer version. `refresh` fetches the marketplaces first. */
+  marketOutdated: (refresh = false) =>
+    invoke<{ markets: number; apps: MarketUpdate[] }>('market_outdated', { refresh }),
+  /** The marketplaces were refreshed (in the background or by the CLI). */
+  onMarketChecked: (callback: () => void) => on<null>('market:checked', () => callback()),
 
   // Tray panel
   hideTray: () => invoke<void>('hide_tray'),

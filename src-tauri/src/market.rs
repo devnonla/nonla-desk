@@ -352,6 +352,8 @@ pub fn apps(market: Option<&str>) -> Result<Value, String> {
                 "description": e["description"],
                 "category": e["category"],
                 "installed": inst.as_ref().map(|a| a.version.clone()),
+                "appId": inst.as_ref().map(|a| a.id.clone()),
+                "title": inst.as_ref().map(|a| a.name.clone()),
                 "update": inst.as_ref().is_some_and(|a| newer(&version, &a.version)),
             }));
         }
@@ -362,6 +364,14 @@ pub fn apps(market: Option<&str>) -> Result<Value, String> {
 /// Refresh the marketplaces, then list only the installed apps that have a newer version.
 pub fn outdated(market: Option<&str>) -> Result<Value, String> {
     let refreshed = update(market)?;
+    let mut v = outdated_local(market)?;
+    v["refreshed"] = refreshed;
+    Ok(v)
+}
+
+/// Installed apps with a newer version in the marketplaces as last refreshed
+/// (no network), and how many marketplaces there are.
+pub fn outdated_local(market: Option<&str>) -> Result<Value, String> {
     let apps = apps(market)?
         .as_array()
         .cloned()
@@ -369,7 +379,7 @@ pub fn outdated(market: Option<&str>) -> Result<Value, String> {
         .into_iter()
         .filter(|a| a["update"].as_bool() == Some(true))
         .collect::<Vec<_>>();
-    Ok(json!({ "refreshed": refreshed, "apps": apps }))
+    Ok(json!({ "markets": list_markets()?.len(), "apps": apps }))
 }
 
 /// What changed between the installed copy of an app and the marketplace's
