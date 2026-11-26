@@ -362,6 +362,14 @@ async fn dispatch(app: &AppHandle, cmd: &str, args: &Value) -> Result<Value, Str
             let name = opt(args, "market");
             blocking(move || market::apps(name.as_deref())).await
         }
+        "market_outdated" => {
+            let name = opt(args, "market");
+            blocking(move || market::outdated(name.as_deref())).await
+        }
+        "market_diff" => {
+            let reference = req(args, "app")?;
+            blocking(move || market::diff(&reference)).await
+        }
         "market_show" => {
             let reference = req(args, "app")?;
             blocking(move || market::show(&reference)).await

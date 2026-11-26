@@ -87,9 +87,10 @@ If it fails the check or crashes, report it; do not edit the app to make it work
 
 ## Updates
 
-`nonladesk market update`, then `nonladesk market apps` shows `update available`. Review **what changed**, not just the new version:
+One app at a time, never all at once:
 
 ```bash
-diff -ru "$(nonladesk path <id>)" "<dir printed by market show>"
+nonladesk market outdated                 # refreshes the marketplaces, lists installed apps with a newer version
+nonladesk market diff <id>@<market>       # what changed between the installed copy and the new version
 ```
-(`manifest.json` may differ in key order; ignore that.) Read every changed file in full and the files around the change. A new network call, new file access or a new remote `import` in a patch release is a high finding. Then report and ask as in step 3; `market install` replaces the code of an app that may be enabled and running.
+`market update` and `outdated` only refresh the marketplace's list; installed apps do not change. Read the whole diff and the files around each change. A new network call, new file access, or a new remote `import` is a high finding even in a small version bump. Report and ask as in step 3, then update only that app with `nonladesk market install <id>@<market>`. An enabled app stays enabled and runs the new code right away, so ask before updating one.

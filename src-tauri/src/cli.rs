@@ -196,8 +196,15 @@ enum MarketCmd {
     /// List added marketplaces
     #[command(alias = "ls")]
     List,
-    /// Fetch the latest version of one marketplace, or all
+    /// Refresh a marketplace's app list (all if omitted). Installed apps do not change.
     Update { name: Option<String> },
+    /// Refresh, then list the installed apps that have a newer version
+    Outdated { market: Option<String> },
+    /// What changed between an installed app and the marketplace's newer version
+    Diff {
+        /// <id>@<market>
+        app: String,
+    },
     /// Remove a marketplace (apps installed from it stay)
     Remove { name: String },
     /// List the apps of a marketplace (all if omitted), with install and update state
@@ -338,6 +345,52 @@ fn run_market(cmd: &MarketCmd, out: &dyn Fn(&Value, Human)) -> Result<i32, Strin
                 }
             });
         }
+        MarketCmd::Outdated { market } => {
+            let v = call("market_outdated", json!({ "market": market }))?;
+            out(&v, &|v| {
+                for m in v["refreshed"].as_array().into_iter().flatten() {
+                    if let Some(e) = m["error"].as_str() {
+                        println!("{}: {e}", s(m, "name"));
+                    }
+                }
+                match v["apps"].as_array().filter(|a| !a.is_empty()) {
+                    None => println!("All installed marketplace apps are up to date."),
+                    Some(list) => {
+                        for a in list {
+                            println!(
+                                "{}@{}  {} -> {}",
+                                s(a, "name"),
+                                s(a, "market"),
+                                s(a, "installed"),
+                                s(a, "version")
+                            );
+                        }
+                        println!(
+                            "Review one with `nonladesk market diff <id>@<market>`, then `nonladesk market install <id>@<market>`."
+                        );
+                    }
+                }
+            });
+        }
+        MarketCmd::Diff { app } => {
+            let v = call("market_diff", json!({ "app": app }))?;
+            out(&v, &|v| {
+                println!(
+                    "{}@{}  installed {} -> latest {}\nnew files: {}\n",
+                    s(v, "name"),
+                    s(v, "market"),
+                    s(v, "installed"),
+                    s(v, "latest"),
+                    s(v, "dir")
+                );
+                let d = s(v, "diff");
+                if d.is_empty() {
+                    println!("No changes.");
+                } else {
+                    print!("{d}");
+                }
+            });
+        }
         MarketCmd::Remove { name } => {
             let v = call("market_remove", json!({ "name": name }))?;
             out(&v, &|v| {
@@ -392,12 +445,20 @@ fn run_market(cmd: &MarketCmd, out: &dyn Fn(&Value, Human)) -> Result<i32, Strin
                 } else {
                     "Installed"
                 };
-                println!(
-                    "{verb} \"{}\" ({}). It is disabled until you run: nonladesk enable {}",
-                    s(v, "name"),
-                    s(v, "slug"),
-                    s(v, "slug")
-                );
+                if v["enabled"].as_bool() == Some(true) {
+                    println!(
+                        "{verb} \"{}\" ({}). It is enabled and now runs the new code.",
+                        s(v, "name"),
+                        s(v, "slug")
+                    );
+                } else {
+                    println!(
+                        "{verb} \"{}\" ({}). It is disabled until you run: nonladesk enable {}",
+                        s(v, "name"),
+                        s(v, "slug"),
+                        s(v, "slug")
+                    );
+                }
             });
         }
         MarketCmd::Publish { app, to } => {

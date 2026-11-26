@@ -53,10 +53,12 @@ apps/<id>/{manifest.json, frontend/index.jsx, backend/index.js, panel/index.jsx,
 | Do | Command |
 |---|---|
 | Add / list / remove | `nonladesk market add <user/repo>`, `market list`, `market remove <market>` |
-| Fetch the latest | `nonladesk market update [market]` |
+| Refresh the app list (installed apps do not change) | `nonladesk market update [market]` |
 | Browse, with install and update state | `nonladesk market apps [market]` |
+| Which installed apps have a newer version | `nonladesk market outdated` |
+| What changed in one app | `nonladesk market diff <id>@<market>` |
 | Show an app's files | `nonladesk market show <id>@<market>` |
-| Install or update | `nonladesk market install <id>@<market>` (installed **disabled**; review first, see the review guide) |
+| Install, or update one app | `nonladesk market install <id>@<market>` (new apps are installed **disabled**; review first, see the review guide) |
 | Publish your own app | `nonladesk market publish <app> --to <market\|dir>` |
 
 ### Publish your app to a marketplace

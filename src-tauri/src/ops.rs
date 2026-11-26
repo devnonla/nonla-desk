@@ -238,6 +238,7 @@ pub async fn import(app: &AppHandle, result: ImportResult) -> Value {
         "id": rec.id,
         "name": rec.name,
         "slug": rec.slug,
+        "enabled": rec.enabled,
         "updated": updated,
         "files": files.iter().map(|(p, n)| json!({ "path": p, "bytes": n })).collect::<Vec<_>>(),
     })

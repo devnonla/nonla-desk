@@ -280,7 +280,8 @@ pub fn list_markets() -> Result<Vec<Value>, String> {
     Ok(out)
 }
 
-/// Pull the latest commit of one marketplace, or of all of them.
+/// Refresh the app list of one marketplace, or of all of them (latest commit of
+/// the repo). Installed apps do not change: each is updated on its own with `install`.
 pub fn update(name: Option<&str>) -> Result<Value, String> {
     let names: Vec<String> = match name {
         Some(n) => vec![n.to_string()],
@@ -351,11 +352,74 @@ pub fn apps(market: Option<&str>) -> Result<Value, String> {
                 "description": e["description"],
                 "category": e["category"],
                 "installed": inst.as_ref().map(|a| a.version.clone()),
-                "update": inst.as_ref().is_some_and(|a| !version.is_empty() && a.version != version),
+                "update": inst.as_ref().is_some_and(|a| newer(&version, &a.version)),
             }));
         }
     }
     Ok(Value::Array(out))
+}
+
+/// Refresh the marketplaces, then list only the installed apps that have a newer version.
+pub fn outdated(market: Option<&str>) -> Result<Value, String> {
+    let refreshed = update(market)?;
+    let apps = apps(market)?
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|a| a["update"].as_bool() == Some(true))
+        .collect::<Vec<_>>();
+    Ok(json!({ "refreshed": refreshed, "apps": apps }))
+}
+
+/// What changed between the installed copy of an app and the marketplace's
+/// latest one, as a unified diff, to review before `install` updates it.
+pub fn diff(reference: &str) -> Result<Value, String> {
+    let (app, market) = split_ref(reference)?;
+    let dir = market_dir(&market)?;
+    let entry = find_entry(&dir, &app)?;
+    let name = entry_name(&entry).to_string();
+    let src = source_dir(&dir, &entry)?;
+    let installed = installed_from(&market, &name)
+        .and_then(|id| miniapp::get(&id).ok().flatten())
+        .ok_or_else(|| {
+            format!("{name} is not installed from {market}; review it with `nonladesk market show {name}@{market}`")
+        })?;
+    let new_version = read_json(&src.join("manifest.json"))
+        .ok()
+        .and_then(|m| m["version"].as_str().map(str::to_string))
+        .unwrap_or_default();
+    let out = Command::new("/usr/bin/diff")
+        .args(["-ruN", "--exclude=.DS_Store"])
+        .arg(paths::app_dir(&installed.id))
+        .arg(&src)
+        .output()
+        .map_err(|e| format!("cannot run diff: {e}"))?;
+    // diff exits 0 when equal, 1 when different, 2 on trouble.
+    if out.status.code() == Some(2) {
+        return Err(String::from_utf8_lossy(&out.stderr).trim().to_string());
+    }
+    Ok(json!({
+        "name": name,
+        "market": market,
+        "installed": installed.version,
+        "latest": new_version,
+        "dir": src,
+        "diff": String::from_utf8_lossy(&out.stdout),
+    }))
+}
+
+/// Is version `a` newer than `b`? Compares the numbers of `1.2.3`.
+fn newer(a: &str, b: &str) -> bool {
+    let nums = |v: &str| -> Vec<u64> {
+        v.split(['-', '+'])
+            .next()
+            .unwrap_or("")
+            .split('.')
+            .map(|p| p.parse().unwrap_or(0))
+            .collect()
+    };
+    !a.is_empty() && nums(a) > nums(b)
 }
 
 /// Everything an agent needs to review an app before installing it.
@@ -503,6 +567,15 @@ mod tests {
             "git@github.com:me/m.git"
         );
         assert_eq!(clone_url("./local/repo"), "./local/repo");
+    }
+
+    #[test]
+    fn versions() {
+        assert!(newer("1.10.0", "1.9.0"));
+        assert!(newer("2.0.0", "1.99.99"));
+        assert!(!newer("1.0.0", "1.0.0"));
+        assert!(!newer("1.0.0", "1.2.0"));
+        assert!(!newer("", "1.0.0"));
     }
 
     #[test]
