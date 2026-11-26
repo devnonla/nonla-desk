@@ -9,8 +9,8 @@ use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::window::Color;
 use tauri::{
-    AppHandle, Emitter, LogicalPosition, Manager, PhysicalPosition, Rect, TitleBarStyle,
-    WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent,
+    AppHandle, Emitter, Manager, PhysicalPosition, Rect, TitleBarStyle, WebviewUrl, WebviewWindow,
+    WebviewWindowBuilder, WindowEvent,
 };
 
 use crate::{paths, updater};
@@ -39,7 +39,6 @@ fn create_main(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         .min_inner_size(800.0, 600.0)
         .title_bar_style(TitleBarStyle::Overlay)
         .hidden_title(true)
-        .traffic_light_position(LogicalPosition::new(16.0, 20.0))
         .background_color(Color(0xf6, 0xc2, 0x8b, 0xff))
         .build()?;
 
