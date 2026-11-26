@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-11-26
+
+### Added
+- A "Nonla Desk" icon on the desktop (and Nonla Desk ▸ About Nonla Desk) opens a page with the version, update check, how to build mini apps with your agent and the shortcuts. A red dot on the icon means an update is available
+- File ▸ Import Mini App… (⌘O) in the menu bar
+
+### Changed
+- The top bar has no background, search input or import button: ⌘K still searches, import moved to the File menu
+- Menu bar panel: the desktop wallpaper edge to edge with desktop-style icons and a glass edge, panels of mini apps fill it without padding, and an empty panel shows the clock
+- New logo (hat with an infinity sign) and menu bar icon
+- When the window is closed the Dock icon goes away and only the menu bar icon stays, like Apple Passwords. Opening the window brings it back
+
+### Fixed
+- 0.5.0 did not open (the app mistook itself for the CLI) and was withdrawn; the app binary is `nonla-desk` again and `nonladesk` is only the CLI link
+- Debug builds no longer defer to an installed Nonla Desk, so `bun dev` runs next to it
+
 ## [0.5.1] - 2026-11-26
 
 ### Fixed
