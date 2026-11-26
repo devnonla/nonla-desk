@@ -45,11 +45,15 @@ fn create_main(app: &AppHandle) -> tauri::Result<WebviewWindow> {
 
     // Closing hides the window; the app keeps running in the menu bar so the
     // CLI and mini app backends stay available.
+    // Like Passwords: with no window open there is no Dock icon either, only the
+    // menu bar one.
     let w = win.clone();
+    let handle = app.clone();
     win.on_window_event(move |e| {
         if let WindowEvent::CloseRequested { api, .. } = e {
             api.prevent_close();
             let _ = w.hide();
+            let _ = handle.set_activation_policy(tauri::ActivationPolicy::Accessory);
         }
     });
     Ok(win)
@@ -57,6 +61,7 @@ fn create_main(app: &AppHandle) -> tauri::Result<WebviewWindow> {
 
 pub fn show_main(app: &AppHandle) {
     if let Some(w) = app.get_webview_window(MAIN) {
+        let _ = app.set_activation_policy(tauri::ActivationPolicy::Regular);
         let _ = w.unminimize();
         let _ = w.show();
         let _ = w.set_focus();

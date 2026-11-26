@@ -47,6 +47,8 @@ pub fn setup(app: &AppHandle, id: &str) -> Result<(), Box<dyn std::error::Error>
             if handle.tray_by_id(TRAY_ID).is_some() {
                 api.prevent_close();
                 let _ = w.hide();
+                // Menu bar only, like Passwords: no Dock icon while the window is hidden.
+                let _ = handle.set_activation_policy(tauri::ActivationPolicy::Accessory);
             }
         }
     });
@@ -71,6 +73,7 @@ pub fn setup(app: &AppHandle, id: &str) -> Result<(), Box<dyn std::error::Error>
 /// Bring the app's window back (Dock click, tray menu).
 pub fn show(app: &AppHandle) {
     if let Some(w) = app.get_webview_window(WINDOW) {
+        let _ = app.set_activation_policy(tauri::ActivationPolicy::Regular);
         let _ = w.unminimize();
         let _ = w.show();
         let _ = w.set_focus();
