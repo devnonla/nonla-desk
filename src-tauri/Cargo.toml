@@ -1,11 +1,15 @@
 [package]
 name = "nonla-desk"
-version = "0.4.1"
+version = "0.5.0"
 description = "Developer utilities desktop app for macOS"
 authors = ["devnonla"]
 license = "MIT"
 edition = "2021"
 rust-version = "1.89"
+
+[[bin]]
+name = "nonladesk"
+path = "src/main.rs"
 
 [lib]
 name = "nonla_desk_lib"

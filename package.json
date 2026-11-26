@@ -1,6 +1,6 @@
 {
   "name": "nonla-desk",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "private": true,
   "description": "Developer utilities desktop app for macOS",
   "author": "devnonla",
@@ -17,7 +17,7 @@
     "build:web": "tsc --noEmit && vite build",
     "vite": "vite",
     "tauri": "tauri",
-    "nonla": "./src-tauri/target/debug/nonla-desk",
+    "nonladesk": "./src-tauri/target/debug/nonladesk",
     "typecheck": "tsc --noEmit",
     "lint": "biome lint .",
     "format": "biome format --write .",
