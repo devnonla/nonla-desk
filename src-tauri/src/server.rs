@@ -1,4 +1,4 @@
-//! Unix socket the `nonla` CLI talks to. One JSON request per line:
+//! Unix socket the `nonladesk` CLI talks to. One JSON request per line:
 //! `{"cmd": "list", "args": {...}}` → `{"ok": true, "data": ...}` or
 //! `{"ok": false, "error": "..."}`. The socket is created with mode 0600.
 
@@ -90,14 +90,14 @@ fn summary(rec: &miniapp::MiniApp) -> Value {
     v
 }
 
-const STARTER_FRONTEND: &str = r#"// Use any library: import { Button } from 'antd' (see `nonla guide`, "Libraries").
+const STARTER_FRONTEND: &str = r#"// Use any library: import { Button } from 'antd' (see `nonladesk guide`, "Libraries").
 module.exports = function App({ ctx }) {
   const [count, setCount] = ctx.useState(0)
 
   return (
     <div style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>
       <h2 style={{ margin: '0 0 8px' }}>Hello from a new mini app</h2>
-      <p style={{ margin: '0 0 16px' }}>Edit frontend/index.jsx, then run `nonla reload`.</p>
+      <p style={{ margin: '0 0 16px' }}>Edit frontend/index.jsx, then run `nonladesk reload`.</p>
       <button type="button" onClick={() => setCount(count + 1)}>
         Clicked {count} times
       </button>
@@ -335,6 +335,8 @@ async fn dispatch(app: &AppHandle, cmd: &str, args: &Value) -> Result<Value, Str
             Ok(json!({ "id": rec.id, "name": rec.name, "path": out }))
         }
 
-        other => Err(format!("Unknown command \"{other}\". Run `nonla --help`.")),
+        other => Err(format!(
+            "Unknown command \"{other}\". Run `nonladesk --help`."
+        )),
     }
 }

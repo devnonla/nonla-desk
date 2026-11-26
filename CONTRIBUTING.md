@@ -57,7 +57,7 @@ bun run check
 
 ### Project Architecture
 
-- **`src-tauri/`** — Rust core: database, mini app runtime, `nonla` CLI, tray
+- **`src-tauri/`** — Rust core: database, mini app runtime, `nonladesk` CLI, tray
 - **`src-tauri/resources/sandbox-runner.cjs`** — Host process for mini app backends (Bun/Node)
 - **`src/`** — React frontend (Tauri webview)
 

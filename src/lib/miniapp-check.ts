@@ -1,5 +1,5 @@
 /**
- * Static check behind `nonla check`: transpile with the same Sucrase setup the
+ * Static check behind `nonladesk check`: transpile with the same Sucrase setup the
  * renderer uses, compile (never run) the result, and verify module.exports.
  */
 import { transpileCode } from './miniapp-helpers'
@@ -47,7 +47,7 @@ function checkFile(kind: FileKind, code: string | undefined): FileCheck {
     (/\bctx\.icons\b/.test(stripped) || /[{,]\s*icons\s*[,}][^=]*=\s*ctx\b/.test(stripped))
   ) {
     errors.push(
-      'ctx.icons was removed. Use <ctx.ui.Icon name="copy" /> or draw the icon as an inline <svg> (see the Icons section of `nonla guide`).',
+      'ctx.icons was removed. Use <ctx.ui.Icon name="copy" /> or draw the icon as an inline <svg> (see the Icons section of `nonladesk guide`).',
     )
   }
   if (kind !== 'backend') {
@@ -99,7 +99,7 @@ export function checkMiniApp(files: { frontend?: string; backend?: string; panel
   const result: CheckResult = {
     ok,
     message: ok
-      ? 'No errors. The check does not run the app: open it (`nonla open <app>`) to catch render-time issues.'
+      ? 'No errors. The check does not run the app: open it (`nonladesk open <app>`) to catch render-time issues.'
       : 'Found errors. Fix them before enabling or reloading the app.',
     files: results,
   }

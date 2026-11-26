@@ -33,42 +33,42 @@ A mini app consists of up to 3 code files, each a JavaScript string:
 
 ---
 
-## Managing apps with the `nonla` CLI
+## Managing apps with the `nonladesk` CLI
 
 Nonla Desk must be running (the CLI starts it if it is installed). Every command takes an app **id or name**. Add `--json` before the command for machine-readable output.
 
 ### ⚠️ Never clone an existing app
 
-App **name is unique**. `nonla create` with a name that already exists **fails** and prints the existing id. Edit that app instead. Do not create "Quick Note 2" or a copy to iterate.
+App **name is unique**. `nonladesk create` with a name that already exists **fails** and prints the existing id. Edit that app instead. Do not create "Quick Note 2" or a copy to iterate.
 
 ### Workflow
 
-1. `nonla list` to find the app. Never guess ids.
+1. `nonladesk list` to find the app. Never guess ids.
 2. New app: write the files anywhere, then
-   `nonla create "My App" --frontend ./frontend.jsx [--backend ./backend.js] [--panel ./panel.jsx] --icon-file ./icon.svg --category "Dev Tools" --description "..."`.
+   `nonladesk create "My App" --frontend ./frontend.jsx [--backend ./backend.js] [--panel ./panel.jsx] --icon-file ./icon.svg --category "Dev Tools" --description "..."`.
    Without `--frontend`, a starter component is written for you.
-3. Existing app: edit its files **in place**. `nonla path <app>` prints the directory:
+3. Existing app: edit its files **in place**. `nonladesk path <app>` prints the directory:
    `frontend/index.jsx`, `backend/index.js`, `panel/index.jsx`, `icon.svg`, `manifest.json`.
-   Or replace one file: `nonla write <app> frontend ./file.jsx` (or `-` for stdin).
-4. After any change: `nonla check <app>` (transpiles JSX with the runtime's own compiler and checks syntax and `module.exports`).
-5. Apply: `nonla reload <app>` re-reads the files, restarts the backend, and refreshes open windows. `nonla write` reloads by itself.
-6. New apps start **disabled**. `nonla enable <app>` turns one on (fails if required config is missing).
-7. Backend problems: `nonla logs <app>` prints recent `ctx.log`, stdout/stderr, and crashes. A backend that exits with an error is disabled automatically.
-8. `nonla open <app>` shows the app in Nonla Desk so the user can see it.
+   Or replace one file: `nonladesk write <app> frontend ./file.jsx` (or `-` for stdin).
+4. After any change: `nonladesk check <app>` (transpiles JSX with the runtime's own compiler and checks syntax and `module.exports`).
+5. Apply: `nonladesk reload <app>` re-reads the files, restarts the backend, and refreshes open windows. `nonladesk write` reloads by itself.
+6. New apps start **disabled**. `nonladesk enable <app>` turns one on (fails if required config is missing).
+7. Backend problems: `nonladesk logs <app>` prints recent `ctx.log`, stdout/stderr, and crashes. A backend that exits with an error is disabled automatically.
+8. `nonladesk open <app>` shows the app in Nonla Desk so the user can see it.
 
-Other commands: `nonla get <app> [--file frontend|backend|panel]`, `nonla update <app> --name/--description/--icon-file/--category/--version` (metadata only), `nonla disable <app>`, `nonla delete <app> --yes`, `nonla import <zip|dir>`, `nonla export <app> -o out.zip`, `nonla install <app> [--open]` (own macOS app in ~/Applications/Nonla Apps, own Dock icon and window; edits made with the CLI show up in it live), `nonla uninstall <app>`, `nonla status`, `nonla guide`.
+Other commands: `nonladesk get <app> [--file frontend|backend|panel]`, `nonladesk update <app> --name/--description/--icon-file/--category/--version` (metadata only), `nonladesk disable <app>`, `nonladesk delete <app> --yes`, `nonladesk import <zip|dir>`, `nonladesk export <app> -o out.zip`, `nonladesk install <app> [--open]` (own macOS app in ~/Applications/Nonla Apps, own Dock icon and window; edits made with the CLI show up in it live), `nonladesk uninstall <app>`, `nonladesk status`, `nonladesk guide`.
 
 ```bash
-nonla create "Password Generator" --frontend /tmp/pw/frontend.jsx --backend /tmp/pw/backend.js --icon-file /tmp/pw/icon.svg --category "Dev Tools"
-nonla check "Password Generator"
-nonla enable "Password Generator"
+nonladesk create "Password Generator" --frontend /tmp/pw/frontend.jsx --backend /tmp/pw/backend.js --icon-file /tmp/pw/icon.svg --category "Dev Tools"
+nonladesk check "Password Generator"
+nonladesk enable "Password Generator"
 # later, after editing ~/.nonla-desk/apps/<id>/frontend/index.jsx:
-nonla check "Password Generator" && nonla reload "Password Generator"
+nonladesk check "Password Generator" && nonladesk reload "Password Generator"
 ```
 
 ### Icon (draw one for every app)
 
-Each app shows an icon on the desktop (48px), in the top bar, the ⌘K palette and the menu bar panel (16px). Draw it as one inline SVG and pass it with `--icon-file icon.svg` on `create` or `update`. It is stored as `icon.svg` in the app folder: edit it in place, then `nonla reload <app>`. `nonla check <app>` checks it too. Without a valid SVG the desktop falls back to a generic emoji.
+Each app shows an icon on the desktop (48px), in the top bar, the ⌘K palette and the menu bar panel (16px). Draw it as one inline SVG and pass it with `--icon-file icon.svg` on `create` or `update`. It is stored as `icon.svg` in the app folder: edit it in place, then `nonladesk reload <app>`. `nonladesk check <app>` checks it too. Without a valid SVG the desktop falls back to a generic emoji.
 
 How it is shown:
 - As-is, no tint and no tile behind it. You design everything: shape, colors, background.
@@ -85,7 +85,7 @@ Line icon:
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
 ```
 
-House style (use this for every app so the desktop looks like one set): a 42px rounded square with a vertical gradient, a top highlight, and one bold white glyph. Desktop icons are shown at 48px with no tile behind them. Pick a color that is not already used by another app (`nonla list` and look at the desktop): amber, yellow, violet, slate, blue, green, teal, rose…
+House style (use this for every app so the desktop looks like one set): a 42px rounded square with a vertical gradient, a top highlight, and one bold white glyph. Desktop icons are shown at 48px with no tile behind them. Pick a color that is not already used by another app (`nonladesk list` and look at the desktop): amber, yellow, violet, slate, blue, green, teal, rose…
 
 ```svg
 <svg viewBox="0 0 48 48"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#62b0f7"/><stop offset="1" stop-color="#2b6fd6"/></linearGradient><linearGradient id="hl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></linearGradient></defs><rect x="3" y="3" width="42" height="42" rx="11" fill="url(#bg)"/><rect x="3" y="3" width="42" height="42" rx="11" fill="url(#hl)"/><path d="M12.5 17l2.6 2.6 4.6-4.6M12.5 25l2.6 2.6 4.6-4.6" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 17.5h12M24 25.5h12" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/></svg>
@@ -236,7 +236,7 @@ export default function MyApp({ ctx }) {
 - The first run fetches the library and pins the exact version it resolved (`antd` → `antd@6.7.2`); later runs reuse that file from the webview cache and do not go back to the network, even offline. A new version only arrives when you ask for one (`antd@7`). Write the version yourself (`antd@6.7.2`) to make an app independent of what was pinned on this machine.
 - Relative imports (`./x`) are not supported: keep the app in one file.
 - Tailwind classes still only work when they are in the desktop's safelist. For a library's own look use its CSS; for your own layout use inline `style` or safelisted classes.
-- You can mix libraries with `ctx.ui` and `ctx.ipc` in the same app. `nonla check` does not fetch libraries: open the app (`nonla open <app>`) to see load errors.
+- You can mix libraries with `ctx.ui` and `ctx.ipc` in the same app. `nonladesk check` does not fetch libraries: open the app (`nonladesk open <app>`) to see load errors.
 
 ### Icons
 
@@ -302,7 +302,7 @@ return ctx.h('div', { className: 'p-6' }, items.length, ' items')
 ## Backend Code (v2 — Child Process)
 
 Backend runs in its own child process under Bun (Node.js if Bun is missing). Node built-ins work in both.
-- `console.log` output and crashes show in `nonla logs <app>`
+- `console.log` output and crashes show in `nonladesk logs <app>`
 - Modern JS OK: const, let, =>, async/await, ?., ??
 - Can require() npm packages
 - Storage and DB are **async** (require await)
@@ -660,7 +660,7 @@ module.exports = function TodoPanel({ ctx }) {
 
 ## Checklist
 
-- [ ] Edited an existing app (never a copy), then ran `nonla check <app>` and `nonla reload <app>`
+- [ ] Edited an existing app (never a copy), then ran `nonladesk check <app>` and `nonladesk reload <app>`
 - [ ] The app has an `icon.svg` that says what it does (`--icon-file`)
 - [ ] Root has `p-6` (or padded chrome). Content is not flush to the window.
 - [ ] Every row/stack uses `ui.Space`. No children sitting on top of each other.

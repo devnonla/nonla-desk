@@ -65,7 +65,7 @@ function AppShell() {
     }
   })
 
-  // Menu bar items, the tray and `nonla open` ask for a route. Like clicking a
+  // Menu bar items, the tray and `nonladesk open` ask for a route. Like clicking a
   // desktop icon, a disabled app opens its details instead of an empty window.
   const miniAppsRef = useRef(miniApps)
   miniAppsRef.current = miniApps

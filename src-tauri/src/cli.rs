@@ -1,5 +1,5 @@
-//! `nonla` command-line client. Same binary as the app: when it is invoked as
-//! `nonla` (symlink) or with arguments, it runs this instead of opening a window,
+//! `nonladesk` command-line client. Same binary as the app: when it is invoked as
+//! `nonladesk` (symlink) or with arguments, it runs this instead of opening a window,
 //! and sends commands to the running app over the Unix socket in `server.rs`.
 
 use std::io::{BufRead, BufReader, Read, Write};
@@ -17,13 +17,13 @@ const GUIDE: &str = include_str!("../../plugins/nonla-desk/skills/nonla-desk/ref
 
 #[derive(Parser)]
 #[command(
-    name = "nonla",
-    bin_name = "nonla",
+    name = "nonladesk",
+    bin_name = "nonladesk",
     version,
     about = "Manage Nonla Desk mini apps from the terminal",
     long_about = "Manage Nonla Desk mini apps from the terminal.\n\n\
         Commands talk to the running Nonla Desk app (it is started if needed).\n\
-        <APP> is an app id or name. Run `nonla guide` before writing mini app code."
+        <APP> is an app id or name. Run `nonladesk guide` before writing mini app code."
 )]
 struct Cli {
     /// Print raw JSON instead of text
@@ -167,7 +167,7 @@ enum Cmd {
 pub fn is_cli_invocation() -> bool {
     let mut args = std::env::args_os();
     let argv0 = args.next().map(PathBuf::from).unwrap_or_default();
-    if argv0.file_name().is_some_and(|n| n == "nonla") {
+    if argv0.file_name().is_some_and(|n| n == "nonladesk") {
         return true;
     }
     // Finder used to pass -psn_*; anything else means a CLI call.
@@ -328,7 +328,7 @@ fn execute(cli: &Cli) -> Result<i32, String> {
                     code = 2;
                 }
             } else if !cli.json {
-                println!("Next: nonla check {id} && nonla enable {id}");
+                println!("Next: nonladesk check {id} && nonladesk enable {id}");
             }
             if cli.json {
                 println!(
@@ -574,7 +574,9 @@ fn state(v: &Value) -> &'static str {
 fn print_list(v: &Value) {
     let apps = v.as_array().cloned().unwrap_or_default();
     if apps.is_empty() {
-        println!("No mini apps yet. Create one: nonla create \"My App\" --frontend ./frontend.jsx");
+        println!(
+            "No mini apps yet. Create one: nonladesk create \"My App\" --frontend ./frontend.jsx"
+        );
         return;
     }
     let width = apps
@@ -737,7 +739,7 @@ fn launch_app() -> Result<(), String> {
     }
 }
 
-/// Link `~/.local/bin/nonla` to this binary when there is no working link yet
+/// Link `~/.local/bin/nonladesk` to this binary when there is no working link yet
 /// (first launch, or the app moved). A link to another existing build is kept.
 pub fn ensure_link() {
     let Ok(exe) = std::env::current_exe() else {
@@ -745,7 +747,15 @@ pub fn ensure_link() {
     };
     let Some(home) = dirs::home_dir() else { return };
     let dir = home.join(".local/bin");
-    let link = dir.join("nonla");
+    // The CLI used to be called `nonla`: drop the old link when it points at this app.
+    let old = dir.join("nonla");
+    if std::fs::read_link(&old).is_ok_and(|t| {
+        t.file_name()
+            .is_some_and(|n| n == "nonla-desk" || n == "nonladesk")
+    }) {
+        let _ = std::fs::remove_file(&old);
+    }
+    let link = dir.join("nonladesk");
     let working = std::fs::read_link(&link).is_ok_and(|target| target.exists());
     if working || (link.exists() && link.symlink_metadata().is_ok_and(|m| !m.is_symlink())) {
         return;

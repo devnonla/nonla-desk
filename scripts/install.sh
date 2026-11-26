@@ -114,10 +114,11 @@ else
   fi
 fi
 
-# ─── nonla CLI ───────────────────────────────────────────────────────────────
+# ─── nonladesk CLI ─────────────────────────────────────────────────────────────
 CLI_DIR="$HOME/.local/bin"
 mkdir -p "$CLI_DIR"
-ln -sf "${INSTALL_DIR}/${APP_BASENAME}/Contents/MacOS/nonla-desk" "$CLI_DIR/nonla"
+rm -f "$CLI_DIR/nonla" # old name of the CLI
+ln -sf "${INSTALL_DIR}/${APP_BASENAME}/Contents/MacOS/nonladesk" "$CLI_DIR/nonladesk"
 echo -e "  CLI linked: ${CYAN}${CLI_DIR}/nonla${NC}"
 case ":$PATH:" in
   *":$CLI_DIR:"*) ;;
@@ -132,6 +133,6 @@ echo -e "${GREEN}=======================================${NC}"
 echo ""
 echo -e "  Location: ${CYAN}${INSTALL_DIR}/${APP_BASENAME}${NC}"
 echo -e "  Launch:   ${DIM}open -a \"${APP_NAME}\"${NC}"
-echo -e "  Agents:   ${DIM}nonla guide${NC}"
+echo -e "  Agents:   ${DIM}nonladesk guide${NC}"
 echo ""
 echo -e "${GREEN}Done! 🎉${NC}"

@@ -1,4 +1,4 @@
-//! `nonla check`: the main window's webview transpiles the code with the same
+//! `nonladesk check`: the main window's webview transpiles the code with the same
 //! Sucrase setup that renders mini apps, so the check matches runtime exactly.
 //! Rust sends `check:request`, the UI answers through the `check_result` command.
 

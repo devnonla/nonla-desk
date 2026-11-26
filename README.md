@@ -18,7 +18,7 @@
 ## ✨ Features
 
 - 🧩 **Mini App Platform** — Mini apps with a React/JSX frontend, an optional backend (Bun or Node.js) and a menu bar panel
-- ⌨️ **`nonla` CLI** — Coding agents (Claude Code, Cursor, Codex…) create, check, reload and debug mini apps from the terminal
+- ⌨️ **`nonladesk` CLI** — Coding agents (Claude Code, Cursor, Codex…) create, check, reload and debug mini apps from the terminal
 - 🖥️ **Menu Bar App** — System tray with a quick access panel for everyday developer utilities
 - 💾 **Local SQLite** — Persistent storage for mini app data and configurations
 - ⚡ **Built with Tauri 2 (Rust) + React + TypeScript**
@@ -40,22 +40,22 @@ curl -fsSL https://raw.githubusercontent.com/devnonla/nonla-desk/main/scripts/in
    xattr -cr /Applications/Nonla\ Desk.app
    curl -fsSL https://bun.sh/install | bash
    ```
-4. Open Nonla Desk once. It links the CLI at `~/.local/bin/nonla`.
+4. Open Nonla Desk once. It links the CLI at `~/.local/bin/nonladesk`.
 
 > **Note:** The app is not code-signed. macOS Gatekeeper will block it on first launch unless you remove the quarantine attribute with the command above.
 
 ## First launch
 
-Mini apps (tools) are written by your coding agent through the `nonla` CLI. While the desktop has no mini apps, a card explains how to start.
+Mini apps (tools) are written by your coding agent through the `nonladesk` CLI. While the desktop has no mini apps, a card explains how to start.
 
 1. Open **Nonla Desk**. It lives in the menu bar; closing the window keeps it running.
-2. `nonla` is linked at `~/.local/bin/nonla`; make sure that folder is on your PATH.
+2. `nonladesk` is linked at `~/.local/bin/nonladesk`; make sure that folder is on your PATH.
 3. Give your agent the skill:
    - Claude Code: `/plugin marketplace add devnonla/nonla-desk`, then `/plugin install nonla-desk@nonla-desk`
-   - Other agents: *Use the `nonla` CLI to build Nonla Desk mini apps. Run `nonla guide` first.*
-4. The agent writes files, then runs `nonla create`, `nonla check`, `nonla enable`, `nonla reload` and `nonla logs`.
+   - Other agents: *Use the `nonladesk` CLI to build Nonla Desk mini apps. Run `nonladesk guide` first.*
+4. The agent writes files, then runs `nonladesk create`, `nonladesk check`, `nonladesk enable`, `nonladesk reload` and `nonladesk logs`.
 
-The CLI talks to the running app over a local socket and starts the app if it is closed. There is nothing to sign in to. `nonla --help` lists every command.
+The CLI talks to the running app over a local socket and starts the app if it is closed. There is nothing to sign in to. `nonladesk --help` lists every command.
 
 Nonla Desk updates itself: it checks GitHub releases at launch and every 6 hours, and the menu bar icon has **Check for Updates…**.
 
@@ -81,7 +81,7 @@ bun install
 bun dev
 
 # Drive the dev app from another terminal
-bun nonla list
+bun nonladesk list
 ```
 
 ### Build
@@ -129,7 +129,7 @@ nonla-desk/
 | `bun dev`              | Run the app in development mode  |
 | `bun run build`        | Build the macOS app and DMG      |
 | `bun run build:web`    | Typecheck and build the frontend |
-| `bun nonla <cmd>`      | Run the CLI against the dev app  |
+| `bun nonladesk <cmd>`      | Run the CLI against the dev app  |
 | `bun run lint`         | Run linter                       |
 | `bun run format`       | Format code                      |
 | `bun run check`        | Lint + format (auto-fix)         |

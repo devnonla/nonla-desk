@@ -68,7 +68,7 @@ pub fn show_main(app: &AppHandle) {
     }
 }
 
-/// Routes asked for before the main window's UI was listening (e.g. `nonla open`
+/// Routes asked for before the main window's UI was listening (e.g. `nonladesk open`
 /// right after launch). The UI takes them with `ui_ready`.
 static PENDING_ROUTES: Mutex<Vec<String>> = Mutex::new(Vec::new());
 static UI_READY: AtomicBool = AtomicBool::new(false);
@@ -249,7 +249,7 @@ fn create_tray_icon(app: &AppHandle) -> tauri::Result<()> {
     }
     let menu = menu.item(&quit).build()?;
 
-    TrayIconBuilder::with_id("nonla")
+    TrayIconBuilder::with_id("nonladesk")
         .icon(Image::from_bytes(include_bytes!("../icons/tray@2x.png"))?)
         .icon_as_template(true)
         .tooltip(if paths::IS_DEV {

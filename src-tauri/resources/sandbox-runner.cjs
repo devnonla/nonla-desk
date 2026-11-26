@@ -57,7 +57,7 @@ function formatArg(a) {
   }
 }
 
-// Route console output through the protocol so it reaches `nonla logs`.
+// Route console output through the protocol so it reaches `nonladesk logs`.
 for (const level of ['log', 'info', 'warn', 'error', 'debug']) {
   console[level] = (...args) => post({ type: 'log', args: args.map(formatArg) })
 }

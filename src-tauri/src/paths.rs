@@ -4,7 +4,7 @@
 //! ~/.nonla-desk/
 //!   apps/<id>/{manifest.json, frontend/index.jsx, backend/index.js, panel/index.jsx}
 //!   data/nonla-desk.db        (nonla-desk-dev.db for debug builds)
-//!   nonla.sock                (nonla-dev.sock for debug builds) — CLI ↔ app
+//!   nonladesk.sock                (nonladesk-dev.sock for debug builds) — CLI ↔ app
 //! ```
 
 use std::path::PathBuf;
@@ -45,15 +45,15 @@ pub fn legacy_db_path() -> Option<PathBuf> {
 }
 
 pub fn socket_path() -> PathBuf {
-    if let Ok(p) = std::env::var("NONLA_SOCKET") {
+    if let Ok(p) = std::env::var("NONLADESK_SOCKET") {
         if !p.is_empty() {
             return PathBuf::from(p);
         }
     }
     root_dir().join(if IS_DEV {
-        "nonla-dev.sock"
+        "nonladesk-dev.sock"
     } else {
-        "nonla.sock"
+        "nonladesk.sock"
     })
 }
 

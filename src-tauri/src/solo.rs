@@ -189,7 +189,7 @@ fn release_in_desktop(id: &str) {
 
 // ─── Follow edits made through the CLI ───────────────────────────────────────
 
-/// Code and metadata are changed by `nonla` in the desktop process. This process
+/// Code and metadata are changed by `nonladesk` in the desktop process. This process
 /// has no socket, so it notices through the files and the database row instead.
 fn signature(rec: &MiniApp) -> Vec<Option<SystemTime>> {
     let mut files: Vec<PathBuf> = [FileKind::Frontend, FileKind::Backend, FileKind::Panel]

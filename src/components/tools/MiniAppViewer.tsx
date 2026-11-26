@@ -7,7 +7,7 @@ import { toast } from '../ui/Toast'
 
 /**
  * Read-only view of a mini app: what it is, its code, its logs. Code is written by
- * an agent through the `nonla` CLI; the only thing people enter here is the
+ * an agent through the `nonladesk` CLI; the only thing people enter here is the
  * app's own settings (config values), which nothing else can set.
  */
 

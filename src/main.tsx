@@ -37,7 +37,7 @@ const Root = lazy(() =>
 )
 if (isTrayPanel) document.documentElement.classList.add('tray')
 
-// `nonla check` runs here so it uses the same transpiler as the renderer.
+// `nonladesk check` runs here so it uses the same transpiler as the renderer.
 if (!isTrayPanel) {
   api.onCheckRequest(async ({ requestId, files }) => {
     const { checkMiniApp } = await import('./lib/miniapp-check')

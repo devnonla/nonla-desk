@@ -307,7 +307,7 @@ pub async fn start(app: &AppHandle, rec: &MiniApp) -> Result<(), String> {
                 &c.id,
                 &c.name,
                 "error",
-                "Backend crashed, so the app was disabled. Fix it, then run `nonla enable`.",
+                "Backend crashed, so the app was disabled. Fix it, then run `nonladesk enable`.",
             );
             ops::broadcast(&c.app, ops::ChangeEvent::enabled(&c.id, false));
         }

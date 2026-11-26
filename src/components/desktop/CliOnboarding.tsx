@@ -5,9 +5,10 @@ import AppLogo from '../ui/AppLogo'
 const CLAUDE_CODE = `/plugin marketplace add devnonla/nonla-desk
 /plugin install nonla-desk@nonla-desk`
 
-const OTHER_AGENTS = 'Use the `nonla` CLI to build Nonla Desk mini apps. Run `nonla guide` first.'
+const OTHER_AGENTS =
+  'Use the `nonladesk` CLI to build Nonla Desk mini apps. Run `nonladesk guide` first.'
 
-/** Shown on an empty desktop: an agent writes mini apps through the `nonla` CLI. */
+/** Shown on an empty desktop: an agent writes mini apps through the `nonladesk` CLI. */
 export function CliOnboarding() {
   const titleId = useId()
 
@@ -25,8 +26,8 @@ export function CliOnboarding() {
               Write tools with your agent
             </Title>
             <Paragraph className="text-muted-foreground">
-              Your coding agent creates mini apps with the <code>nonla</code> CLI. Keep Nonla Desk
-              running in the menu bar. Nothing to sign in to: it all stays on this Mac.
+              Your coding agent creates mini apps with the <code>nonladesk</code> CLI. Keep Nonla
+              Desk running in the menu bar. Nothing to sign in to: it all stays on this Mac.
             </Paragraph>
           </div>
           <CodeBlock code={CLAUDE_CODE} title="Claude Code: add the skill" />

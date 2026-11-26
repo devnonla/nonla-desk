@@ -50,7 +50,7 @@ export function buildFrontendContext(appId: string) {
     /** Removed: icon sets are not bundled. Use ctx.ui.Icon or draw an inline <svg>. */
     get icons(): never {
       throw new Error(
-        'ctx.icons was removed. Use <ctx.ui.Icon name="copy" /> (devnonla-ui glyphs) or draw the icon as an inline <svg> in your file. Run `nonla guide` for the list.',
+        'ctx.icons was removed. Use <ctx.ui.Icon name="copy" /> (devnonla-ui glyphs) or draw the icon as an inline <svg> in your file. Run `nonladesk guide` for the list.',
       )
     },
     ipc,

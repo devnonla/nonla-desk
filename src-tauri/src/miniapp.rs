@@ -203,7 +203,7 @@ pub fn resolve(id_or_name: &str) -> Result<MiniApp, String> {
         return Ok(app);
     }
     Err(format!(
-        "No mini app with id or name \"{id_or_name}\". Run `nonla list`."
+        "No mini app with id or name \"{id_or_name}\". Run `nonladesk list`."
     ))
 }
 
