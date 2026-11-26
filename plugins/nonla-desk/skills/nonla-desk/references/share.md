@@ -1,4 +1,6 @@
-# Nonla Desk — Sharing mini apps (zip)
+# Nonla Desk — Sharing mini apps
+
+Two ways: a **zip** for sending an app once, a **marketplace** (a git repo) for apps that get updates.
 
 ## Id and version
 
@@ -23,13 +25,38 @@ nonladesk export color-picker -o color-picker.zip
 nonladesk import color-picker.zip          # on the other machine; installs disabled
 ```
 
-A zip has no source, so a newer copy is not announced: whoever imports it again must pass `--force`.
+A zip has no source, so a newer copy is not announced: whoever imports it again must pass `--force`. For apps that should get updates, use a marketplace.
+
+## Marketplace
+
+A marketplace is a git repo (usually GitHub) with `marketplace.json` at the root and each app as a folder in the same layout as the zip:
+
+```
+marketplace.json
+apps/<id>/{manifest.json, frontend/index.jsx, backend/index.js, panel/index.jsx, icon.svg}
+```
+
+```json
+{ "name": "my-market", "owner": { "name": "me" }, "description": "…",
+  "apps": [ { "name": "color-picker", "source": "./apps/color-picker", "version": "1.0.0", "description": "…", "category": "Dev Tools" } ] }
+```
+
+`name` is the app id; `source` is a path inside the repo. An app is addressed as `<id>@<market>`. The Nonla Desk repo itself is a marketplace: `nonladesk market add devnonla/nonla-desk`.
+
+| Do | Command |
+|---|---|
+| Add / list / remove | `nonladesk market add <user/repo>`, `market list`, `market remove <market>` |
+| Fetch the latest | `nonladesk market update [market]` |
+| Browse, with install and update state | `nonladesk market apps [market]` |
+| Review before installing | `nonladesk market show <id>@<market>` |
+| Install or update | `nonladesk market install <id>@<market>` (installed **disabled**) |
+| Share your own app | `nonladesk market publish <app> --to <market\|dir>`, then commit and push that repo |
 
 ## Review before you enable
 
 Backends run on the user's machine with their full rights (files, commands, network). Frontends can load code from the network. Treat any app you did not write like a script from the internet:
 
-1. Read every file (`nonladesk path <app>`). Look for shell commands, network calls, file access outside the app, `import` from URLs, anything unexpected.
+1. Read every file (`nonladesk market show …` or `nonladesk path <app>`). Look for shell commands, network calls, file access outside the app, `import` from URLs, anything unexpected.
 2. `nonladesk check <app>`.
 3. Enable it (`nonladesk enable <app>`) only if the review is clean and the user agrees, or let the user enable it.
-4. Review again before importing a newer copy over an app you already enabled (`--force` replaces its code).
+4. After `market update`, review again before `market install` replaces the code of an app you already enabled.

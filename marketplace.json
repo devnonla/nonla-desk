@@ -1,0 +1,23 @@
+{
+  "apps": [
+    {
+      "category": "Productivity",
+      "description": "A notepad that saves as you type",
+      "name": "quick-notes",
+      "source": "./apps/quick-notes",
+      "version": "1.0.0"
+    },
+    {
+      "category": "Utilities",
+      "description": "Local time in a few cities",
+      "name": "world-clock",
+      "source": "./apps/world-clock",
+      "version": "1.0.0"
+    }
+  ],
+  "description": "Mini apps for Nonla Desk. Add it with: nonladesk market add devnonla/nonla-desk",
+  "name": "nonla-desk",
+  "owner": {
+    "name": "devnonla"
+  }
+}

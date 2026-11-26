@@ -7,6 +7,7 @@ mod check;
 pub mod cli;
 mod commands;
 mod db;
+mod market;
 mod miniapp;
 mod ops;
 mod paths;

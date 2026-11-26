@@ -170,12 +170,54 @@ enum Cmd {
         #[arg(short, long)]
         out: Option<PathBuf>,
     },
+    /// Share mini apps through marketplaces (GitHub repos with a marketplace.json)
+    #[command(subcommand)]
+    Market(MarketCmd),
     /// App version, JS runtime (Bun/Node) and paths
     Status,
     /// Print a guide: develop (default), icon or share
     Guide {
         #[arg(value_parser = ["develop", "icon", "share"])]
         topic: Option<String>,
+    },
+}
+
+#[derive(Subcommand)]
+enum MarketCmd {
+    /// Add a marketplace: user/repo (GitHub), a git URL or a local path
+    Add {
+        source: String,
+        /// Local name (defaults to the name in marketplace.json)
+        #[arg(long)]
+        name: Option<String>,
+    },
+    /// List added marketplaces
+    #[command(alias = "ls")]
+    List,
+    /// Fetch the latest version of one marketplace, or all
+    Update { name: Option<String> },
+    /// Remove a marketplace (apps installed from it stay)
+    Remove { name: String },
+    /// List the apps of a marketplace (all if omitted), with install and update state
+    Apps { market: Option<String> },
+    /// Show an app of a marketplace and where its files are, to review before installing
+    Show {
+        /// <id>@<market>
+        app: String,
+    },
+    /// Install (or update) an app from a marketplace. It is installed disabled.
+    Install {
+        /// <id>@<market>
+        app: String,
+        /// Overwrite an existing app with the same id that came from elsewhere
+        #[arg(long)]
+        force: bool,
+    },
+    /// Copy an app into a marketplace checkout (a marketplace name or a directory)
+    Publish {
+        app: String,
+        #[arg(long)]
+        to: String,
     },
 }
 
@@ -246,6 +288,126 @@ fn absolute(p: &Path) -> String {
         .unwrap_or_else(|_| p.to_path_buf())
         .to_string_lossy()
         .into_owned()
+}
+
+type Human<'a> = &'a dyn Fn(&Value);
+
+fn run_market(cmd: &MarketCmd, out: &dyn Fn(&Value, Human)) -> Result<i32, String> {
+    let s = |v: &Value, k: &str| v[k].as_str().unwrap_or_default().to_string();
+    match cmd {
+        MarketCmd::Add { source, name } => {
+            let v = call("market_add", json!({ "source": source, "name": name }))?;
+            out(&v, &|v| {
+                println!(
+                    "Added marketplace \"{}\" with {} app(s). Browse: nonladesk market apps {}",
+                    s(v, "name"),
+                    v["apps"],
+                    s(v, "name")
+                )
+            });
+        }
+        MarketCmd::List => {
+            let v = call("market_list", json!({}))?;
+            out(&v, &|v| match v.as_array().filter(|a| !a.is_empty()) {
+                None => println!("No marketplace. Add one: nonladesk market add <user/repo>"),
+                Some(list) => {
+                    for m in list {
+                        println!(
+                            "{:<24} {:>3} apps  {}",
+                            s(m, "name"),
+                            m["apps"],
+                            s(m, "source")
+                        );
+                    }
+                }
+            });
+        }
+        MarketCmd::Update { name } => {
+            let v = call("market_update", json!({ "name": name }))?;
+            out(&v, &|v| {
+                for m in v.as_array().into_iter().flatten() {
+                    match m["error"].as_str() {
+                        Some(e) => println!("{}: {e}", s(m, "name")),
+                        None if m["changed"].as_bool() == Some(true) => {
+                            println!("{}: updated", s(m, "name"))
+                        }
+                        None => println!("{}: up to date", s(m, "name")),
+                    }
+                }
+            });
+        }
+        MarketCmd::Remove { name } => {
+            let v = call("market_remove", json!({ "name": name }))?;
+            out(&v, &|v| {
+                println!("Removed marketplace \"{}\".", s(v, "name"))
+            });
+        }
+        MarketCmd::Apps { market } => {
+            let v = call("market_apps", json!({ "market": market }))?;
+            out(&v, &|v| {
+                for a in v.as_array().into_iter().flatten() {
+                    let state = match (a["installed"].as_str(), a["update"].as_bool()) {
+                        (Some(i), Some(true)) => format!("installed {i}, update available"),
+                        (Some(i), _) => format!("installed {i}"),
+                        _ => String::new(),
+                    };
+                    println!(
+                        "{}@{}  {}  {}\n    {}",
+                        s(a, "name"),
+                        s(a, "market"),
+                        s(a, "version"),
+                        state,
+                        s(a, "description")
+                    );
+                }
+            });
+        }
+        MarketCmd::Show { app } => {
+            let v = call("market_show", json!({ "app": app }))?;
+            out(&v, &|v| {
+                println!("{}@{}", s(v, "name"), s(v, "market"));
+                println!("dir: {}", s(v, "dir"));
+                for f in v["files"].as_array().into_iter().flatten() {
+                    println!("  {} ({} bytes)", s(f, "path"), f["bytes"]);
+                }
+                println!("Read these files before installing: backends can run shell commands.");
+            });
+        }
+        MarketCmd::Install { app, force } => {
+            let v = call("market_install", json!({ "app": app, "force": force }))?;
+            out(&v, &|v| {
+                let verb = if v["updated"].as_bool() == Some(true) {
+                    "Updated"
+                } else {
+                    "Installed"
+                };
+                println!(
+                    "{verb} \"{}\" ({}). It is disabled until you run: nonladesk enable {}",
+                    s(v, "name"),
+                    s(v, "slug"),
+                    s(v, "slug")
+                );
+            });
+        }
+        MarketCmd::Publish { app, to } => {
+            let target = if to.contains('/') || to.starts_with('.') {
+                absolute(Path::new(to))
+            } else {
+                to.clone()
+            };
+            let v = call("market_publish", json!({ "app": app, "to": target }))?;
+            out(&v, &|v| {
+                println!(
+                    "Published \"{}\" {} to {}/{}.\nNext: git add, commit and push that repo.",
+                    s(v, "name"),
+                    s(v, "version"),
+                    s(v, "dir"),
+                    s(v, "source")
+                )
+            });
+        }
+    }
+    Ok(0)
 }
 
 fn execute(cli: &Cli) -> Result<i32, String> {
@@ -555,6 +717,7 @@ fn execute(cli: &Cli) -> Result<i32, String> {
             });
             Ok(0)
         }
+        Cmd::Market(m) => run_market(m, &out),
         Cmd::Status => {
             let v = call("status", json!({}))?;
             out(&v, &|v| {

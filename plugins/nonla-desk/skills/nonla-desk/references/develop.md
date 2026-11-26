@@ -1,7 +1,7 @@
 # Nonla Desk — Mini App Development Guide
 
 > Read this before writing mini app code. Mini apps run inside the Nonla Desk desktop app (Tauri). Code is stored on the filesystem (`~/.nonla-desk/apps/`) and evaluated at runtime.
-> Related: `nonladesk guide icon` (drawing the icon), `nonladesk guide share` (zip, reviewing other people's apps).
+> Related: `nonladesk guide icon` (drawing the icon), `nonladesk guide share` (zip, marketplaces, reviewing other people's apps).
 
 ---
 
@@ -56,7 +56,7 @@ App **name and id are unique**. `nonladesk create` with a name that already exis
 7. Backend problems: `nonladesk logs <app>` prints recent `ctx.log`, stdout/stderr, and crashes. A backend that exits with an error is disabled automatically.
 8. `nonladesk open <app>` shows the app in Nonla Desk so the user can see it.
 
-Other commands: `nonladesk get <app> [--file frontend|backend|panel]`, `nonladesk update <app> --name/--description/--icon-file/--category/--version` (metadata only), `nonladesk disable <app>`, `nonladesk delete <app> --yes`, `nonladesk import` / `export` (see `nonladesk guide share`), `nonladesk install <app> [--open]` (own macOS app in ~/Applications/Nonla Apps, own Dock icon and window; edits made with the CLI show up in it live), `nonladesk uninstall <app>`, `nonladesk status`, `nonladesk guide [develop|icon|share]`.
+Other commands: `nonladesk get <app> [--file frontend|backend|panel]`, `nonladesk update <app> --name/--description/--icon-file/--category/--version` (metadata only), `nonladesk disable <app>`, `nonladesk delete <app> --yes`, `nonladesk import` / `export` / `market …` (see `nonladesk guide share`), `nonladesk install <app> [--open]` (own macOS app in ~/Applications/Nonla Apps, own Dock icon and window; edits made with the CLI show up in it live), `nonladesk uninstall <app>`, `nonladesk status`, `nonladesk guide [develop|icon|share]`.
 
 ```bash
 nonladesk create "Password Generator" --frontend /tmp/pw/frontend.jsx --backend /tmp/pw/backend.js --icon-file /tmp/pw/icon.svg --category "Dev Tools"

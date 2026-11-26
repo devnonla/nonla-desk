@@ -1,6 +1,6 @@
 ---
 name: nonla-desk
-description: Build, change, share and debug Nonla Desk mini apps with the local `nonladesk` CLI. A mini app is a small tool on the user's Nonla Desk (macOS) with a React/JSX frontend, an optional Bun backend and an optional menu bar panel. Use when the user asks to install Nonla Desk, for a mini app or a demo app, for a desktop tool or widget "in Nonla Desk", to share or import a mini app (zip), or mentions nonladesk, ~/.nonla-desk, or an existing mini app by name.
+description: Build, change, share and debug Nonla Desk mini apps with the local `nonladesk` CLI. A mini app is a small tool on the user's Nonla Desk (macOS) with a React/JSX frontend, an optional Bun backend and an optional menu bar panel. Use when the user asks to install Nonla Desk, for a mini app or a demo app, for a desktop tool or widget "in Nonla Desk", to share or import a mini app (zip or marketplace), or mentions nonladesk, ~/.nonla-desk, or an existing mini app by name.
 ---
 
 # Nonla Desk
@@ -14,7 +14,7 @@ Nonla Desk is a macOS app that hosts **mini apps**. You create and change them w
 | Nonla Desk installed, or `nonladesk` is not found | [references/install.md](references/install.md) |
 | To build or change a mini app (code, CLI workflow, `ctx` API) | [references/develop.md](references/develop.md) (`nonladesk guide`) |
 | An icon for an app | [references/icon.md](references/icon.md) (`nonladesk guide icon`) |
-| To share an app or import a zip | [references/share.md](references/share.md) (`nonladesk guide share`) |
+| To share an app, import a zip, or use a marketplace | [references/share.md](references/share.md) (`nonladesk guide share`) |
 
 `nonladesk status` must work before anything else. Read the develop guide before writing code; read the icon guide when you create an app.
 
@@ -34,7 +34,7 @@ Nonla Desk is a macOS app that hosts **mini apps**. You create and change them w
 | On / off | `nonladesk enable <app>`, `nonladesk disable <app>` |
 | Backend output, crashes | `nonladesk logs <app> [-n 200]` |
 | Show the user | `nonladesk open <app>` |
-| Share | `nonladesk export <app> -o x.zip`, `nonladesk import <zip\|dir> [--force]` (see the share guide) |
+| Share | `nonladesk export <app> -o x.zip`, `nonladesk import <zip\|dir> [--force]`, `nonladesk market …` (see the share guide) |
 | Standalone macOS app | `nonladesk install <app> [--open]`, `nonladesk uninstall <app>` |
 | Remove | `nonladesk delete <app> --yes` (ask the user first) |
 

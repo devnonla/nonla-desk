@@ -12,7 +12,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{UnixListener, UnixStream};
 
 use crate::miniapp::{self, CreateInput, FileKind, UpdateInput};
-use crate::{backend, bundle, check, ops, paths, runtime, shell};
+use crate::{backend, bundle, check, market, ops, paths, runtime, shell};
 
 #[derive(Deserialize)]
 struct Request {
@@ -343,6 +343,38 @@ async fn dispatch(app: &AppHandle, cmd: &str, args: &Value) -> Result<Value, Str
             let bytes = miniapp::export_zip(&rec.id)?;
             std::fs::write(&out, bytes).map_err(|e| format!("{}: {e}", out.display()))?;
             Ok(json!({ "id": rec.id, "name": rec.name, "path": out }))
+        }
+
+        "market_add" => {
+            let (source, name) = (req(args, "source")?, opt(args, "name"));
+            blocking(move || market::add(&source, name.as_deref())).await
+        }
+        "market_list" => Ok(Value::Array(blocking(market::list_markets).await?)),
+        "market_update" => {
+            let name = opt(args, "name");
+            blocking(move || market::update(name.as_deref())).await
+        }
+        "market_remove" => {
+            let name = req(args, "name")?;
+            blocking(move || market::remove(&name)).await
+        }
+        "market_apps" => {
+            let name = opt(args, "market");
+            blocking(move || market::apps(name.as_deref())).await
+        }
+        "market_show" => {
+            let reference = req(args, "app")?;
+            blocking(move || market::show(&reference)).await
+        }
+        "market_install" => {
+            let reference = req(args, "app")?;
+            let force = args["force"].as_bool() == Some(true);
+            let result = blocking(move || market::install(&reference, force)).await?;
+            Ok(ops::import(app, result).await)
+        }
+        "market_publish" => {
+            let (name, to) = (req(args, "app")?, req(args, "to")?);
+            blocking(move || market::publish(&name, &to)).await
         }
 
         other => Err(format!(
