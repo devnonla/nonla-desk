@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.4] - 2026-11-26
+
+### Changed
+- The top bar shows only the name, lined up with the window buttons
+- App names on the desktop are at most twice the icon wide and go to a second line when longer (cut after two lines), and the icons sit closer to the left edge
+
+### Fixed
+- The window buttons sat at a different height in a running app than in a fresh one, because macOS reset their custom position after the window was hidden and shown. They now use the default position
+
 ## [0.5.3] - 2026-11-26
 
 ### Changed
