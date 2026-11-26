@@ -28,7 +28,8 @@ pub fn run() {
     let solo = solo::app_id();
 
     let mut builder = tauri::Builder::default();
-    if solo.is_none() {
+    // Debug builds have their own socket and database, so they run next to an installed app.
+    if solo.is_none() && !paths::IS_DEV {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             shell::show_main(app)
         }));
