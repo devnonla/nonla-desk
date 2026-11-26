@@ -1,5 +1,7 @@
 import { Kbd, Tooltip } from 'devnonla-ui'
+import { useEffect, useState } from 'react'
 import { Search, Upload } from '@/components/ui/icons'
+import { api } from '@/lib/api'
 import AppLogo from '../ui/AppLogo'
 
 interface TopBarProps {
@@ -13,6 +15,19 @@ interface TopBarProps {
  * the window.
  */
 export function TopBar({ onSearch, onImport }: TopBarProps) {
+  const [version, setVersion] = useState('')
+  const [supported, setSupported] = useState(false)
+  const [pending, setPending] = useState<string | null>(null)
+
+  useEffect(() => {
+    void api.getUpdateInfo().then((info) => {
+      setVersion(info.version)
+      setSupported(info.supported)
+      setPending(info.pending)
+    })
+    return api.onUpdatePending(setPending)
+  }, [])
+
   return (
     <header
       data-tauri-drag-region
@@ -23,6 +38,32 @@ export function TopBar({ onSearch, onImport }: TopBarProps) {
         <span data-tauri-drag-region className="text-[13px] font-semibold text-(--color-ink)">
           Nonla Desk
         </span>
+        {version && (
+          <Tooltip
+            title={
+              pending
+                ? `Version ${pending} is available. Click to install.`
+                : supported
+                  ? 'Check for updates'
+                  : 'Updates are off in this build'
+            }
+          >
+            <button
+              type="button"
+              disabled={!supported}
+              onClick={() => void api.checkForUpdates()}
+              className={`h-5 flex items-center gap-1 px-1.5 rounded text-[11px] transition-colors focus-visible:outline-2 focus-visible:outline-(--color-primary) ${
+                pending
+                  ? 'bg-(--color-primary) text-white cursor-pointer'
+                  : supported
+                    ? 'text-(--color-mute) cursor-pointer hover:bg-black/5 hover:text-(--color-body)'
+                    : 'text-(--color-mute) cursor-default'
+              }`}
+            >
+              {pending ? `Update to v${pending}` : `v${version}`}
+            </button>
+          </Tooltip>
+        )}
       </div>
 
       <div data-tauri-drag-region className="flex-1 self-stretch" />

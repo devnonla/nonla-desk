@@ -24,7 +24,7 @@ const PUBKEY: Option<&str> = option_env!("NONLA_UPDATER_PUBKEY");
 const ENDPOINT: Option<&str> = option_env!("NONLA_UPDATER_ENDPOINT");
 const FIRST_CHECK: Duration = Duration::from_secs(15);
 const INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
-const TRAY_ID: &str = "nonla";
+const TRAY_ID: &str = "nonladesk";
 
 #[derive(Default)]
 pub struct Updates {
@@ -89,6 +89,13 @@ fn reset_item(app: &AppHandle) {
     if let Some(tray) = app.tray_by_id(TRAY_ID) {
         let _ = tray.set_tooltip(Some(tooltip));
     }
+    let pending = app.state::<Updates>().pending.lock().unwrap().clone();
+    let _ = app.emit_to("main", "update:pending", pending);
+}
+
+/// Version found by the last check that is newer than the running one.
+pub fn pending(app: &AppHandle) -> Option<String> {
+    app.state::<Updates>().pending.lock().unwrap().clone()
 }
 
 fn progress(app: &AppHandle, text: Option<&str>, percent: u32) {

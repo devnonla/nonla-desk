@@ -94,7 +94,7 @@ export const windowLabel = (): string => getCurrentWindow().label
 export const api = {
   getAppVersion: () => invoke<string>('app_version'),
 
-  /** Routes from the menu bar, tray and `nonla open`, including any sent before the UI loaded. */
+  /** Routes from the menu bar, tray and `nonladesk open`, including any sent before the UI loaded. */
   onNavigateTool: (callback: (tool: string) => void) => {
     let unlisten: (() => void) | undefined
     let disposed = false
@@ -224,7 +224,7 @@ export const api = {
   onRuntimeMissing: (callback: (event: { appId: string }) => void) =>
     on('runtime:missing', callback),
 
-  // `nonla check` round trip (see src-tauri/src/check.rs)
+  // `nonladesk check` round trip (see src-tauri/src/check.rs)
   onCheckRequest: (callback: (req: CheckRequest) => void) => on('check:request', callback),
   sendCheckResult: (requestId: string, result: unknown) =>
     invoke<void>('check_result', { requestId, result }),
@@ -232,6 +232,13 @@ export const api = {
   // In-app updates (src-tauri/src/updater.rs). `text: null` hides the notice.
   onUpdateProgress: (callback: (event: { text: string | null; percent: number }) => void) =>
     on('update:progress', callback),
+
+  getUpdateInfo: () =>
+    invoke<{ version: string; supported: boolean; pending: string | null }>('update_info'),
+  checkForUpdates: () => invoke<void>('check_for_updates'),
+  /** A newer version was found (its number) or the pending one is gone (null). */
+  onUpdatePending: (callback: (version: string | null) => void) =>
+    on<string | null>('update:pending', callback),
 
   // Tray panel
   hideTray: () => invoke<void>('hide_tray'),

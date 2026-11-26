@@ -1,5 +1,5 @@
 //! Nonla Desk: a macOS desktop for mini apps that AI agents write through the
-//! `nonla` CLI. See CLAUDE.md for the architecture.
+//! `nonladesk` CLI. See CLAUDE.md for the architecture.
 
 mod backend;
 mod bundle;
@@ -66,6 +66,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::app_version,
+            commands::update_info,
+            commands::check_for_updates,
             commands::list_mini_apps,
             commands::get_mini_app,
             commands::create_mini_app,

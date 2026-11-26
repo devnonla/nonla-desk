@@ -9,11 +9,28 @@ use tokio::sync::oneshot;
 use crate::backend::{self, LogEntry};
 use crate::miniapp::{self, CreateInput, UpdateInput};
 use crate::ops::{self, EnableResult};
-use crate::{bundle, check, shell, solo};
+use crate::{bundle, check, shell, solo, updater};
 
 #[tauri::command]
 pub fn app_version(app: AppHandle) -> String {
     app.package_info().version.to_string()
+}
+
+/// What the UI shows about updates: the running version, whether this build can
+/// update itself (only builds made with updater keys), and a newer version if known.
+#[tauri::command]
+pub fn update_info(app: AppHandle) -> Value {
+    json!({
+        "version": app.package_info().version.to_string(),
+        "supported": updater::config().is_some(),
+        "pending": updater::pending(&app),
+    })
+}
+
+/// Same as the tray's "Check for Updates…": reports "up to date" or asks to install.
+#[tauri::command]
+pub async fn check_for_updates(app: AppHandle) {
+    updater::check(app, true).await;
 }
 
 #[tauri::command]
