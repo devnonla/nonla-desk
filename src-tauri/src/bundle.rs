@@ -7,7 +7,7 @@
 //!
 //! ```text
 //! ~/Applications/Nonla Apps/<Name>.app/Contents/
-//!   MacOS/nonladesk              copy of the running binary
+//!   MacOS/nonla-desk             copy of the running binary
 //!   Resources/solo.json          {"id", "nonlaVersion"}
 //!   Resources/icon.icns          drawn from the app's icon.svg
 //!   Resources/sandbox-runner.cjs
@@ -144,7 +144,7 @@ pub fn install(app: &AppHandle, id: &str) -> Result<PathBuf, String> {
     let exe_name = exe
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
-        .unwrap_or_else(|| "nonladesk".into());
+        .unwrap_or_else(|| "nonla-desk".into());
 
     let dir = install_dir();
     fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;

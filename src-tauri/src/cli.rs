@@ -164,21 +164,15 @@ enum Cmd {
 }
 
 /// True when this process should act as the CLI rather than the app.
-///
-/// The app binary and the CLI have the same name (`nonladesk`), so the name
-/// cannot tell them apart: the CLI is the `~/.local/bin/nonladesk` symlink, or
-/// any call with arguments. A plain launch (Finder, `bun dev`) opens the app.
+/// The app binary is `nonla-desk`; the CLI is the `nonladesk` symlink to it.
 pub fn is_cli_invocation() -> bool {
-    let via_symlink = std::env::current_exe()
-        .ok()
-        .and_then(|exe| std::fs::symlink_metadata(exe).ok())
-        .is_some_and(|m| m.is_symlink());
-    if via_symlink {
+    let mut args = std::env::args_os();
+    let argv0 = args.next().map(PathBuf::from).unwrap_or_default();
+    if argv0.file_name().is_some_and(|n| n == "nonladesk") {
         return true;
     }
     // Finder used to pass -psn_*; anything else means a CLI call.
-    std::env::args_os()
-        .nth(1)
+    args.next()
         .is_some_and(|a| !a.to_string_lossy().starts_with("-psn_"))
 }
 

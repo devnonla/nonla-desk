@@ -118,7 +118,7 @@ fi
 CLI_DIR="$HOME/.local/bin"
 mkdir -p "$CLI_DIR"
 rm -f "$CLI_DIR/nonla" # old name of the CLI
-ln -sf "${INSTALL_DIR}/${APP_BASENAME}/Contents/MacOS/nonladesk" "$CLI_DIR/nonladesk"
+ln -sf "${INSTALL_DIR}/${APP_BASENAME}/Contents/MacOS/nonla-desk" "$CLI_DIR/nonladesk"
 echo -e "  CLI linked: ${CYAN}${CLI_DIR}/nonla${NC}"
 case ":$PATH:" in
   *":$CLI_DIR:"*) ;;

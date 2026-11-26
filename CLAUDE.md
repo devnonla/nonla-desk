@@ -11,7 +11,7 @@ Bun is the package manager; Rust stable builds the core.
 ```bash
 bun install
 bun dev                     # tauri dev: Vite on :1420 + debug app (dev DB, dev socket)
-bun nonladesk <cmd>             # run the CLI against the dev app (src-tauri/target/debug/nonladesk)
+bun nonladesk <cmd>             # run the CLI against the dev app (src-tauri/target/debug/nonla-desk)
 bun run build:web           # tsc + vite build (frontend only)
 bun run build               # scripts/build-app.ts: release app + DMG (universal by default)
 bunx tauri build --debug --bundles app    # quick debug .app bundle

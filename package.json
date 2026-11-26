@@ -17,7 +17,7 @@
     "build:web": "tsc --noEmit && vite build",
     "vite": "vite",
     "tauri": "tauri",
-    "nonladesk": "./src-tauri/target/debug/nonladesk",
+    "nonladesk": "./src-tauri/target/debug/nonla-desk",
     "typecheck": "tsc --noEmit",
     "lint": "biome lint .",
     "format": "biome format --write .",

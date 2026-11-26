@@ -9,7 +9,7 @@ Nonla Desk is a macOS app that hosts **mini apps**. You create and change them w
 
 ## Before the first command
 
-1. Check the CLI: `nonladesk status`. If `nonladesk` is not found, use `"/Applications/Nonla Desk.app/Contents/MacOS/nonladesk"` with the same arguments, or ask the user to install Nonla Desk:
+1. Check the CLI: `nonladesk status`. If `nonladesk` is not found, use `"/Applications/Nonla Desk.app/Contents/MacOS/nonla-desk"` with the same arguments, or ask the user to install Nonla Desk:
    `curl -fsSL https://raw.githubusercontent.com/devnonla/nonla-desk/main/scripts/install.sh | bash`
 2. `status` shows the JavaScript runtime. Backends need Bun (or Node.js). If it says none, tell the user to run `curl -fsSL https://bun.sh/install | bash`.
 3. Read [references/guide.md](references/guide.md) before writing code. It has the frontend, backend and panel formats, `ctx`, the UI kit and the styling rules. `nonladesk guide` prints the same text.

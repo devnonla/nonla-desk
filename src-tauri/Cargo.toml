@@ -7,10 +7,6 @@ license = "MIT"
 edition = "2021"
 rust-version = "1.89"
 
-[[bin]]
-name = "nonladesk"
-path = "src/main.rs"
-
 [lib]
 name = "nonla_desk_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
