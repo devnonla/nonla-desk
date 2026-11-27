@@ -45,6 +45,44 @@ pub async fn market_outdated(app: AppHandle, refresh: bool) -> Result<Value, Str
         .map_err(|e| e.to_string())?
 }
 
+/// Run blocking marketplace work (git, files) off the async runtime.
+async fn market_blocking<T: Send + 'static>(
+    f: impl FnOnce() -> Result<T, String> + Send + 'static,
+) -> Result<T, String> {
+    tauri::async_runtime::spawn_blocking(f)
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+/// `nonladesk market add` from the UI: `user/repo`, a git URL or a local path.
+#[tauri::command]
+pub async fn market_add(app: AppHandle, source: String) -> Result<Value, String> {
+    let v = market_blocking(move || crate::market::add(&source, None)).await?;
+    let _ = tauri::Emitter::emit(&app, "market:checked", ());
+    Ok(v)
+}
+
+#[tauri::command]
+pub async fn market_remove(app: AppHandle, name: String) -> Result<Value, String> {
+    let v = market_blocking(move || crate::market::remove(&name)).await?;
+    let _ = tauri::Emitter::emit(&app, "market:checked", ());
+    Ok(v)
+}
+
+/// Every app of every added marketplace, with install and update state.
+#[tauri::command]
+pub async fn market_apps() -> Result<Value, String> {
+    market_blocking(|| crate::market::apps(None)).await
+}
+
+/// Install or update one app (`<id>@<market>`). New apps land disabled. Never
+/// overwrites an app that did not come from that marketplace.
+#[tauri::command]
+pub async fn market_install(app: AppHandle, reference: String) -> Result<Value, String> {
+    let result = market_blocking(move || crate::market::install(&reference, false)).await?;
+    Ok(ops::import(&app, result).await)
+}
+
 #[tauri::command]
 pub fn list_mini_apps() -> Result<Vec<Value>, String> {
     let native = bundle::installed_ids();

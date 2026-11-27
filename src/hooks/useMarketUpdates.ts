@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
-import { api, type Marketplace, type MarketUpdate } from '@/lib/api'
+import { api, type MarketApp, type Marketplace, type MarketUpdate } from '@/lib/api'
 
 /**
- * Installed marketplace apps that have a newer version. Re-read when apps
- * change or the marketplaces are refreshed; `check()` fetches them now.
+ * Added marketplaces, their apps, and the installed ones that have a newer
+ * version. Re-read when apps change or the marketplaces are refreshed;
+ * `check()` fetches the marketplaces now.
  */
 export function useMarketUpdates() {
   const [markets, setMarkets] = useState<Marketplace[]>([])
   const [updates, setUpdates] = useState<MarketUpdate[]>([])
+  const [apps, setApps] = useState<MarketApp[]>([])
   const [checking, setChecking] = useState(false)
 
   const load = useCallback(async (refresh = false) => {
@@ -15,6 +17,7 @@ export function useMarketUpdates() {
       const r = await api.marketOutdated(refresh)
       setMarkets(r.markets)
       setUpdates(r.apps)
+      setApps(r.markets.length ? await api.marketApps() : [])
     } catch {
       // No marketplace folder or git trouble: show nothing rather than an error.
     }
@@ -39,5 +42,5 @@ export function useMarketUpdates() {
     }
   }, [load])
 
-  return { markets, updates, checking, check }
+  return { markets, updates, apps, checking, check, reload: load }
 }

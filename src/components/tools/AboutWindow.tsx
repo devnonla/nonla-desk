@@ -1,9 +1,11 @@
-import { Button, CodeBlock, Kbd, Paragraph, Title } from 'devnonla-ui'
-import { useEffect, useState } from 'react'
+import { Button, CodeBlock, Input, Kbd, Paragraph, Title } from 'devnonla-ui'
+import { useEffect, useRef, useState } from 'react'
 import { useMarketUpdates } from '@/hooks/useMarketUpdates'
-import { api, type MarketUpdate } from '@/lib/api'
+import { useWindows } from '@/hooks/useWindows'
+import { api, type MarketApp, type MarketUpdate } from '@/lib/api'
 import { CLAUDE_CODE, OTHER_AGENTS } from '../desktop/CliOnboarding'
 import AppLogo from '../ui/AppLogo'
+import { confirm } from '../ui/ConfirmDialog'
 import { toast } from '../ui/Toast'
 
 const REPO = 'https://github.com/devnonla/nonla-desk'
@@ -85,10 +87,29 @@ function SidebarItem({
 }
 
 /** What to paste to the agent: review this one update, then install it only after a yes. */
-const reviewPrompt = (u: MarketUpdate) =>
+const updatePrompt = (u: MarketUpdate) =>
   `Use the nonla-market skill to review the update of the mini app ${u.name}@${u.market} ` +
   `(installed ${u.installed}, new ${u.version}): run \`nonladesk market diff ${u.name}@${u.market}\`, ` +
   'read every change, tell me what changed and any risk, and update only this app after I say yes.'
+
+/** What to paste to the agent: review a new app, then install it only after a yes. */
+const installPrompt = (a: MarketApp) =>
+  `Use the nonla-market skill to review the mini app ${a.name}@${a.market}: run ` +
+  `\`nonladesk market show ${a.name}@${a.market}\`, read every file, tell me what it does and ` +
+  'any risk, and install it only after I say yes.'
+
+const RISK =
+  'A mini app runs with your full rights: its backend can read your files, run commands and use ' +
+  'the network. Install only apps you trust, or let your agent review the code first.'
+
+async function copyPrompt(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    toast.success('Copied. Paste it to your agent.')
+  } catch {
+    toast.error('Could not copy to the clipboard')
+  }
+}
 
 function DeskPane({
   info,
@@ -170,16 +191,86 @@ function DeskPane({
 }
 
 function AppsPane({ market }: { market: ReturnType<typeof useMarketUpdates> }) {
-  const { markets, updates, checking, check } = market
+  const { markets, updates, apps, checking, check, reload } = market
+  const { open } = useWindows()
+  const [busy, setBusy] = useState<string | null>(null)
+  const [source, setSource] = useState('')
+  const [adding, setAdding] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
-  const copy = async (u: MarketUpdate) => {
-    try {
-      await navigator.clipboard.writeText(reviewPrompt(u))
-      toast.success('Copied. Paste it to your agent.')
-    } catch {
-      toast.error('Could not copy to the clipboard')
-    }
+  const install = (a: MarketApp) => {
+    const ref = `${a.name}@${a.market}`
+    const isUpdate = Boolean(a.installed)
+    confirm({
+      title: isUpdate
+        ? `Update ${a.title || a.name} to ${a.version}?`
+        : `Install ${a.name} from ${a.market}?`,
+      content: isUpdate
+        ? `${RISK} The new code replaces version ${a.installed}; it stays on or off as it is now.`
+        : `${RISK} It is installed turned off: open its details to turn it on.`,
+      okText: isUpdate ? 'Update' : 'Install',
+      onOk: async () => {
+        setBusy(ref)
+        const r = await api.marketInstall(ref)
+        setBusy(null)
+        if (!r.success) {
+          toast.error(r.error)
+          return
+        }
+        toast.success(r.updated ? `Updated "${r.name}"` : `Installed "${r.name}" (turned off)`)
+        if (!r.updated) open('info', r.id)
+      },
+    })
   }
+
+  const importZip = async (file: File) => {
+    const buffer = await file.arrayBuffer()
+    confirm({
+      title: `Import ${file.name}?`,
+      content: `${RISK} It is imported turned off. An app with the same id is not replaced.`,
+      okText: 'Import',
+      onOk: async () => {
+        const r = await api.importMiniAppZip(buffer)
+        if (!r.success) {
+          toast.error(r.error)
+          return
+        }
+        toast.success(`Imported "${file.name}" (turned off)`)
+        open('info', r.id)
+      },
+    })
+  }
+
+  const add = async () => {
+    const value = source.trim()
+    if (!value) return
+    setAdding(true)
+    const r = await api.marketAdd(value)
+    setAdding(false)
+    if (!r.success) {
+      toast.error(r.error)
+      return
+    }
+    setSource('')
+    toast.success(`Added "${r.name}" with ${r.apps} app${r.apps === 1 ? '' : 's'}`)
+    void reload()
+  }
+
+  const remove = (name: string) =>
+    confirm({
+      title: `Remove the marketplace ${name}?`,
+      content: 'Apps installed from it stay, but no longer get updates from it.',
+      okText: 'Remove',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        const r = await api.marketRemove(name)
+        if (!r.success) toast.error(r.error)
+        else void reload()
+      },
+    })
+
+  const available = apps.filter((a) => !a.installed)
+  const installed = apps.filter((a) => a.installed && !a.update)
 
   return (
     <>
@@ -187,61 +278,146 @@ function AppsPane({ market }: { market: ReturnType<typeof useMarketUpdates> }) {
         <div className="flex flex-col gap-0.5 min-w-0">
           <Title level={3}>Mini apps</Title>
           <span className="text-[13px] text-(--color-mute)">
-            Updates from your marketplaces. Your agent reviews each one before it is installed.
+            Install apps from marketplaces or a zip. They come in turned off.
           </span>
         </div>
-        {markets.length > 0 && (
-          <Button loading={checking} onClick={() => void check()}>
-            Check now
-          </Button>
-        )}
+        <div className="flex shrink-0 gap-2">
+          <Button onClick={() => fileRef.current?.click()}>Import zip</Button>
+          {markets.length > 0 && (
+            <Button loading={checking} onClick={() => void check()}>
+              Check now
+            </Button>
+          )}
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".zip"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) void importZip(file)
+            e.target.value = ''
+          }}
+        />
       </header>
 
-      <Section title="Updates">
-        <div className="flex flex-col rounded-lg border border-border">
-          {updates.length === 0 ? (
-            <Row
-              title="Everything is up to date"
-              detail={
-                markets.length
-                  ? 'No newer version in your marketplaces.'
-                  : 'Add a marketplace to get updates.'
-              }
-            />
-          ) : (
-            updates.map((u) => (
+      {updates.length > 0 && (
+        <Section title="Updates">
+          <div className="flex flex-col rounded-lg border border-border">
+            {updates.map((u) => (
               <Row
                 key={`${u.market}/${u.name}`}
                 title={u.title || u.name}
                 detail={`${u.name}@${u.market} · ${u.installed} → ${u.version}`}
               >
-                <Button type="primary" onClick={() => void copy(u)}>
-                  Copy review prompt
-                </Button>
+                <div className="flex shrink-0 gap-1">
+                  <Button type="text" onClick={() => void copyPrompt(updatePrompt(u))}>
+                    Review prompt
+                  </Button>
+                  <Button
+                    type="primary"
+                    loading={busy === `${u.name}@${u.market}`}
+                    onClick={() =>
+                      install({
+                        ...u,
+                        description: null,
+                        category: null,
+                        update: true,
+                      })
+                    }
+                  >
+                    Update
+                  </Button>
+                </div>
               </Row>
-            ))
-          )}
-        </div>
-      </Section>
-
-      <Section title="Marketplaces">
-        {markets.length === 0 ? (
-          <Paragraph className="text-muted-foreground">
-            None yet. Ask your agent to add one, or run{' '}
-            <code>nonladesk market add devnonla/nonladesk-apps</code> (any <code>user/repo</code>{' '}
-            works).
-          </Paragraph>
-        ) : (
-          <div className="flex flex-col rounded-lg border border-border">
-            {markets.map((m) => (
-              <Row
-                key={m.name}
-                title={m.name}
-                detail={`${m.apps} app${m.apps === 1 ? '' : 's'} · ${m.source}`}
-              />
             ))}
           </div>
-        )}
+        </Section>
+      )}
+
+      {markets.length > 0 && (
+        <Section title="Available">
+          <div className="flex flex-col rounded-lg border border-border">
+            {available.length === 0 ? (
+              <Row title="Nothing new" detail="Every app of your marketplaces is installed." />
+            ) : (
+              available.map((a) => (
+                <Row
+                  key={`${a.market}/${a.name}`}
+                  title={a.name}
+                  detail={`${a.description || a.category || ''} · ${a.version} · ${a.market}`}
+                >
+                  <div className="flex shrink-0 gap-1">
+                    <Button type="text" onClick={() => void copyPrompt(installPrompt(a))}>
+                      Review prompt
+                    </Button>
+                    <Button loading={busy === `${a.name}@${a.market}`} onClick={() => install(a)}>
+                      Install
+                    </Button>
+                  </div>
+                </Row>
+              ))
+            )}
+          </div>
+        </Section>
+      )}
+
+      {installed.length > 0 && (
+        <Section title="Installed from marketplaces">
+          <div className="flex flex-col rounded-lg border border-border">
+            {installed.map((a) => (
+              <Row
+                key={`${a.market}/${a.name}`}
+                title={a.title || a.name}
+                detail={`${a.name}@${a.market} · ${a.installed} · up to date`}
+              >
+                {a.appId && (
+                  <Button type="text" onClick={() => open('info', a.appId ?? undefined)}>
+                    Details
+                  </Button>
+                )}
+              </Row>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      <Section title="Marketplaces">
+        <div className="flex flex-col rounded-lg border border-border">
+          {markets.map((m) => (
+            <Row
+              key={m.name}
+              title={m.name}
+              detail={`${m.apps} app${m.apps === 1 ? '' : 's'} · ${m.source}`}
+            >
+              <Button type="text" onClick={() => remove(m.name)}>
+                Remove
+              </Button>
+            </Row>
+          ))}
+          <form
+            className="flex items-center gap-2 px-4 py-3"
+            onSubmit={(e) => {
+              e.preventDefault()
+              void add()
+            }}
+          >
+            <Input
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              placeholder="user/repo, e.g. devnonla/nonladesk-apps"
+              className="flex-1"
+            />
+            <Button htmlType="submit" type="primary" loading={adding} disabled={!source.trim()}>
+              Add
+            </Button>
+          </form>
+        </div>
+        <Paragraph className="text-muted-foreground">
+          A marketplace is someone's git repo of mini apps. Adding one only downloads its list;
+          nothing is installed until you choose.
+        </Paragraph>
       </Section>
     </>
   )
