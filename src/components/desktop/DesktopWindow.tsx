@@ -116,9 +116,16 @@ const RESIZE_HANDLES: { edges: Edges; className: string }[] = [
 ]
 
 const LIGHT =
-  'size-3 rounded-full border-none p-0 cursor-default flex items-center justify-center shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.18)]'
-const GLYPH =
-  'size-2 opacity-0 group-hover/lights:opacity-100 text-black/55 transition-opacity duration-100'
+  'size-3.5 rounded-full border-none p-0 cursor-default flex items-center justify-center bg-linear-to-b transition-colors duration-100'
+const GLYPH = 'size-2.5 opacity-0 group-hover/lights:opacity-100 transition-opacity duration-100'
+const RED =
+  'from-[#ff7a70] to-[#f2463d] shadow-[inset_0_0_0_0.5px_rgba(170,30,25,0.45)] text-[#7a1510]'
+const GREEN =
+  'from-[#4fdc68] to-[#1fb23a] shadow-[inset_0_0_0_0.5px_rgba(15,110,35,0.45)] text-[#0b5219]'
+/** Gray dots of a window that is not focused; they take their color back on hover. */
+const IDLE = 'from-[#dedcd8] to-[#cfcdc9] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]'
+const IDLE_RED = `${IDLE} text-[#7a1510] group-hover/lights:from-[#ff7a70] group-hover/lights:to-[#f2463d]`
+const IDLE_GREEN = `${IDLE} text-[#0b5219] group-hover/lights:from-[#4fdc68] group-hover/lights:to-[#1fb23a]`
 
 /** macOS-style close and zoom lights; gray when the window is not focused, glyphs on hover. */
 function TrafficLights({
@@ -133,18 +140,18 @@ function TrafficLights({
   onToggleExpand: () => void
 }) {
   return (
-    <div className="group/lights flex items-center gap-2 pl-3 pr-2 h-full">
+    <div className="group/lights flex items-center gap-2 pl-3.5 pr-2 h-full">
       <button
         type="button"
         aria-label="Close window"
         onClick={onClose}
-        className={`${LIGHT} ${focused ? 'bg-[#ff5f57]' : 'bg-[#d4d3cf] group-hover/lights:bg-[#ff5f57]'}`}
+        className={`${LIGHT} ${focused ? RED : IDLE_RED}`}
       >
         <svg viewBox="0 0 12 12" className={GLYPH} aria-hidden="true">
           <path
             d="M3.5 3.5l5 5M8.5 3.5l-5 5"
             stroke="currentColor"
-            strokeWidth="1.4"
+            strokeWidth="1.8"
             strokeLinecap="round"
           />
         </svg>
@@ -153,19 +160,13 @@ function TrafficLights({
         type="button"
         aria-label={expanded ? 'Restore window' : 'Zoom window'}
         onClick={onToggleExpand}
-        className={`${LIGHT} ${focused ? 'bg-[#28c840]' : 'bg-[#d4d3cf] group-hover/lights:bg-[#28c840]'}`}
+        className={`${LIGHT} ${focused ? GREEN : IDLE_GREEN}`}
       >
         <svg viewBox="0 0 12 12" className={GLYPH} aria-hidden="true">
           {expanded ? (
-            <path
-              d="M6.6 2.8v2.6h2.6M5.4 9.2V6.6H2.8"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.3"
-              strokeLinejoin="round"
-            />
+            <path d="M6.5 2.2v3.3h3.3zM5.5 9.8V6.5H2.2z" fill="currentColor" />
           ) : (
-            <path d="M3 9V5.2L6.8 9H3zM9 3v3.8L5.2 3H9z" fill="currentColor" />
+            <path d="M3 9V4.4L7.6 9zM9 3v4.6L4.4 3z" fill="currentColor" />
           )}
         </svg>
       </button>
