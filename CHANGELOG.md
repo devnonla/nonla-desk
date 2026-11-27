@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-11-27
+
+### Added
+- Marketplaces: install mini apps from someone's git repo with a `marketplace.json`, like Claude Code plugin marketplaces. `nonladesk market add <user/repo>`, `market apps` (with install and update state), `market show`, `market install`, `market update`. `market outdated` lists installed apps with a newer version and `market diff` shows what changed, so each app is reviewed and updated on its own. The official one: `nonladesk market add devnonla/nonladesk-apps`
+- Every mini app has a unique id (`color-picker`), kept in `manifest.json`; commands accept it. Existing apps get one from their name
+- Import on the desktop (also ⌘O, or drop a zip): install a mini app from a zip or from a marketplace (`user/repo`). It checks the package first (format, files, and whether the code runs commands, uses the network, reads files or loads libraries), then installs it turned off
+- Right-clicking an app shows where it came from: "Local app" or "From <marketplace>", with its version
+- `nonla-market` skill: marketplaces and zips, and a full code review of someone else's app (every file, reported to the user) before installing it
+- `nonladesk guide [develop|icon|share|review]`
+
+### Changed
+- Zip export and import use the marketplace layout (`manifest.json`, `frontend/index.jsx`, `backend/index.js`, `panel/index.jsx`, `icon.svg`); older zips still import
+- `import` checks the manifest (`version` is required), size limits and extra files, refuses to overwrite an app with the same id without `--force`, and lists the files to review
+- The `nonla-desk` skill is split into short install, develop and icon guides; `ctx.ui` is no longer documented
+- Windows have a liquid glass frame: the title bar is frosted glass over the wallpaper, with no line under it, 12px corners and refined close and zoom lights
+- Nonla Desk and Import sit in their own column on the right edge of the desktop; mini apps stay on the left
+- The Nonla Desk and Import pages are wider
+
+### Fixed
+- Remove Native App quits the standalone app and hands its background process back to the desktop, which reloads open windows of that app
+- The installer prints the right CLI path (`~/.local/bin/nonladesk`)
+
 ## [0.5.5] - 2026-11-26
 
 ### Changed
