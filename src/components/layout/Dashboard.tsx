@@ -1,12 +1,14 @@
 import type React from 'react'
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import desktopBackground from '@/assets/desktop-bg.jpg'
 import { api } from '@/lib/api'
+import { queueZip } from '@/lib/import-queue'
 import { useWindows } from '../../hooks/useWindows'
 import { AboutIcon } from '../desktop/AboutIcon'
 import { DesktopClock } from '../desktop/DesktopClock'
 import { DesktopCommandPalette } from '../desktop/DesktopCommandPalette'
 import { DesktopIcon } from '../desktop/DesktopIcon'
+import { ImportIcon } from '../desktop/ImportIcon'
 import { TopBar } from '../desktop/TopBar'
 import type { AppItem } from '../desktop/types'
 import { confirm } from '../ui/ConfirmDialog'
@@ -34,8 +36,6 @@ interface DashboardProps {
 
 export default function Dashboard({ apps, loading, loadApps }: DashboardProps) {
   const { windows, focused, open, closeApp } = useWindows()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
   const [dragOver, setDragOver] = useState(false)
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
 
@@ -121,47 +121,15 @@ export default function Dashboard({ apps, loading, loadApps }: DashboardProps) {
     }
   }
 
-  const importZipFile = async (file: File) => {
-    try {
-      if (!file.name.endsWith('.zip')) {
-        toast.error('Please select a .miniapp.zip file')
-        return
-      }
-
-      const buffer = await file.arrayBuffer()
-      const result = await api.importMiniAppZip(buffer)
-      if (result?.success) {
-        toast.success(
-          result.updated ? `Updated "${file.name}" (existing app)` : `Imported "${file.name}"`,
-        )
-        loadApps()
-      } else {
-        toast.error(result?.error || 'Import failed')
-      }
-    } catch {
-      toast.error('Failed to import mini app')
-    }
-  }
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) await importZipFile(file)
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
-
-  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+  // A zip dropped on the desktop goes to the Import window, which checks it first.
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     setDragOver(false)
     const file = e.dataTransfer.files?.[0]
-    if (file) await importZipFile(file)
+    if (!file) return
+    queueZip(file)
+    open('import')
   }
-
-  // File ▸ Import Mini App… in the menu bar (App.tsx forwards the route).
-  useEffect(() => {
-    const onImport = () => fileInputRef.current?.click()
-    window.addEventListener('nonla:import', onImport)
-    return () => window.removeEventListener('nonla:import', onImport)
-  }, [])
 
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
@@ -211,14 +179,6 @@ export default function Dashboard({ apps, loading, loadApps }: DashboardProps) {
       onDrop={handleDrop}
       className="absolute inset-0 overflow-hidden bg-[#f6c28b]"
     >
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".zip,.miniapp.zip"
-        className="hidden"
-        onChange={handleFileSelect}
-      />
-
       {/* Same artwork as the open-agent-hands sign-in screen. */}
       <img
         src={desktopBackground}
@@ -244,6 +204,10 @@ export default function Dashboard({ apps, loading, loadApps }: DashboardProps) {
         className="absolute inset-x-0 top-11 bottom-0 z-20 px-5 py-4 flex flex-col flex-wrap content-start items-start gap-x-1 gap-y-3 overflow-x-auto"
       >
         <AboutIcon active={windows.some((w) => w.kind === 'about')} onOpen={() => open('about')} />
+        <ImportIcon
+          active={windows.some((w) => w.kind === 'import')}
+          onOpen={() => open('import')}
+        />
         {loading ? <span className="sr-only">Loading apps…</span> : apps.map(renderAppIcon)}
       </nav>
 
@@ -252,7 +216,7 @@ export default function Dashboard({ apps, loading, loadApps }: DashboardProps) {
         onClose={() => setIsCommandPaletteOpen(false)}
         apps={apps}
         onOpenApp={openApp}
-        onImportApp={() => fileInputRef.current?.click()}
+        onImportApp={() => open('import')}
       />
 
       {!loading && apps.length === 0 && noOpenWindows && (

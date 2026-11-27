@@ -79,6 +79,42 @@ pub async fn import_mini_app_zip(app: AppHandle, data: Vec<u8>) -> Result<Value,
     Ok(ops::import(&app, result).await)
 }
 
+// ─── Import window ───────────────────────────────────────────────────────────
+
+/// Run blocking work (git, files) off the async runtime.
+async fn blocking<T: Send + 'static>(
+    f: impl FnOnce() -> Result<T, String> + Send + 'static,
+) -> Result<T, String> {
+    tauri::async_runtime::spawn_blocking(f)
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+/// Check a zip before importing it: manifest, files, what the code touches.
+#[tauri::command]
+pub fn inspect_zip(data: Vec<u8>) -> Result<Value, String> {
+    miniapp::bundle_from_zip(&data)?.inspect()
+}
+
+/// Add (or refresh) the marketplace at `source` and list its apps.
+#[tauri::command]
+pub async fn market_open(source: String) -> Result<Value, String> {
+    blocking(move || crate::market::open(&source)).await
+}
+
+/// Check one marketplace app (`<id>@<market>`) before installing it.
+#[tauri::command]
+pub async fn market_inspect(reference: String) -> Result<Value, String> {
+    blocking(move || crate::market::inspect(&reference)).await
+}
+
+/// Install or update one marketplace app. New apps land disabled.
+#[tauri::command]
+pub async fn market_install(app: AppHandle, reference: String) -> Result<Value, String> {
+    let result = blocking(move || crate::market::install(&reference, false)).await?;
+    Ok(ops::import(&app, result).await)
+}
+
 /// Ask where to save, then write the ZIP. Returns the path, or None if cancelled.
 #[tauri::command]
 pub async fn export_mini_app(app: AppHandle, id: String) -> Result<Option<String>, String> {

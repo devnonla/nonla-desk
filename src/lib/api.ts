@@ -24,6 +24,35 @@ export interface MiniAppLogEvent {
   args: string[]
 }
 
+/** A mini app package checked before it is installed (`Bundle::inspect` in miniapp.rs). */
+export interface ImportPreview {
+  id: string
+  name: string
+  version: string
+  description: string
+  category: string
+  files: { path: string; bytes: number }[]
+  /** `ok: false` is something to know before installing (background process, network, …). */
+  checks: { ok: boolean; text: string }[]
+  /** An installed app with the same id. */
+  existing: { name: string; version: string; market: string | null } | null
+  /** Set for a marketplace app. */
+  market?: string
+  commit?: string
+}
+
+/** An app listed by a marketplace (`market::apps`). */
+export interface MarketListing {
+  name: string
+  market: string
+  version: string
+  description: string | null
+  category: string | null
+  installed: string | null
+  title: string | null
+  update: boolean
+}
+
 export interface CheckRequest {
   requestId: string
   files: { frontend?: string; backend?: string; panel?: string }
@@ -143,6 +172,28 @@ export const api = {
       invoke<{ id: string; updated: boolean }>('import_mini_app_zip', {
         data: Array.from(new Uint8Array(buffer)),
       }),
+    ),
+  /** Check a zip before importing it. */
+  inspectZip: (buffer: ArrayBuffer) =>
+    attempt(async () => ({
+      preview: await invoke<ImportPreview>('inspect_zip', {
+        data: Array.from(new Uint8Array(buffer)),
+      }),
+    })),
+  /** Add (or refresh) a marketplace: `user/repo`, a git URL or a path. Lists its apps. */
+  marketOpen: (source: string) =>
+    attempt(() =>
+      invoke<{ name: string; source: string; apps: MarketListing[] }>('market_open', { source }),
+    ),
+  /** Check one marketplace app (`<id>@<market>`) before installing it. */
+  marketInspect: (reference: string) =>
+    attempt(async () => ({
+      preview: await invoke<ImportPreview>('market_inspect', { reference }),
+    })),
+  /** Install or update one marketplace app. New apps land disabled. */
+  marketInstall: (reference: string) =>
+    attempt(() =>
+      invoke<{ id: string; name: string; updated: boolean }>('market_install', { reference }),
     ),
   /** Shows a save dialog. `path` is null when the user cancels. */
   exportMiniApp: (id: string) =>

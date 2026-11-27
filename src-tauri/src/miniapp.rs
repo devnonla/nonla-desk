@@ -881,6 +881,72 @@ impl Bundle {
             .filter(|n| !n.is_empty())
             .ok_or_else(|| "Invalid manifest: missing name".into())
     }
+
+    /// What the Import window shows before installing: the manifest, the files,
+    /// what the code touches (a quick scan, not a review) and any app with the same id.
+    pub fn inspect(&self) -> Result<Value, String> {
+        self.validate()?;
+        let id = self.slug()?;
+        let text = |key: &str| self.manifest.get(key).and_then(Value::as_str).unwrap_or("");
+        let all = format!("{}\n{}\n{}", self.frontend, self.backend, self.panel);
+        let has = |needles: &[&str], code: &str| needles.iter().any(|n| code.contains(n));
+
+        let mut checks = vec![json!({
+            "ok": true,
+            "text": format!("Valid package: manifest, version {}, sizes within limits", text("version")),
+        })];
+        let mut warn = |text: &str| checks.push(json!({ "ok": false, "text": text }));
+        if !self.backend.is_empty() {
+            warn("Has a background process that runs with your full rights");
+        }
+        if has(&["child_process", "host.shell", "execSync", "spawn("], &all) {
+            warn("Runs shell commands");
+        }
+        if has(
+            &[
+                "require('fs')",
+                "require(\"fs\")",
+                "node:fs",
+                "readFile",
+                "writeFile",
+            ],
+            &all,
+        ) {
+            warn("Reads or writes files on this Mac");
+        }
+        if has(
+            &[
+                "fetch(",
+                "XMLHttpRequest",
+                "WebSocket",
+                "http://",
+                "https://",
+            ],
+            &all,
+        ) {
+            warn("Uses the network");
+        }
+        static IMPORTS: LazyLock<Regex> =
+            LazyLock::new(|| Regex::new(r#"(?m)^\s*import\s.*from\s+['"][^./]"#).unwrap());
+        if IMPORTS.is_match(&self.frontend) || IMPORTS.is_match(&self.panel) {
+            warn("Loads libraries from the internet when it opens");
+        }
+        if has(&["eval(", "new Function"], &all) {
+            warn("Builds and runs code at runtime (eval)");
+        }
+
+        let existing = find_by_slug(&id)?;
+        Ok(json!({
+            "id": id,
+            "name": self.name()?,
+            "version": text("version"),
+            "description": text("description"),
+            "category": text("category"),
+            "files": self.files().iter().map(|(p, n)| json!({ "path": p, "bytes": n })).collect::<Vec<_>>(),
+            "checks": checks,
+            "existing": existing.map(|a| json!({ "name": a.name, "version": a.version, "market": a.market })),
+        }))
+    }
 }
 
 pub struct ImportResult {

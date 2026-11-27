@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '@/lib/api'
 import { forgetGeometry } from '@/lib/window-geometry'
 import { DesktopWindow } from './components/desktop/DesktopWindow'
+import { IMPORT_ICON_SVG } from './components/desktop/ImportIcon'
 import type { AppItem } from './components/desktop/types'
 import Dashboard from './components/layout/Dashboard'
 import { useMiniAppChanges } from './hooks/useMiniAppChanges'
@@ -13,6 +14,7 @@ const loadRenderer = () => import('./components/tools/MiniAppRenderer')
 const MiniAppRenderer = lazy(loadRenderer)
 const MiniAppViewer = lazy(() => import('./components/tools/MiniAppViewer'))
 const AboutWindow = lazy(() => import('./components/tools/AboutWindow'))
+const ImportWindow = lazy(() => import('./components/tools/ImportWindow'))
 
 function WindowFallback() {
   return (
@@ -29,6 +31,7 @@ export interface MiniAppInfo extends AppItem {
 
 function windowLabel(w: DeskWindow, app: MiniAppInfo | undefined) {
   if (w.kind === 'about') return { title: 'Nonla Desk', icon: undefined, iconSvg: null }
+  if (w.kind === 'import') return { title: 'Import', icon: '📥', iconSvg: IMPORT_ICON_SVG }
   const name = app?.name ?? 'Mini app'
   return {
     title: w.kind === 'info' ? `${name} — Details` : name,
@@ -78,7 +81,7 @@ function AppShell() {
         return
       }
       if (tool === 'import') {
-        window.dispatchEvent(new Event('nonla:import'))
+        open('import')
         return
       }
       if (!tool.startsWith('mini/')) return
@@ -127,7 +130,13 @@ function AppShell() {
                 focused={focused?.key === w.key}
                 slot={w.slot}
                 persistKey={w.key}
-                originId={w.kind === 'about' ? 'nonla-about' : w.appId}
+                originId={
+                  w.kind === 'about'
+                    ? 'nonla-about'
+                    : w.kind === 'import'
+                      ? 'nonla-import'
+                      : w.appId
+                }
                 onFocus={() => focus(w.key)}
                 onClose={() => close(w.key)}
                 onToggleExpand={() => toggleExpand(w.key)}
@@ -136,6 +145,8 @@ function AppShell() {
                   <Suspense fallback={<WindowFallback />}>
                     {w.kind === 'about' ? (
                       <AboutWindow />
+                    ) : w.kind === 'import' ? (
+                      <ImportWindow />
                     ) : w.kind === 'app' && w.appId ? (
                       <MiniAppRenderer appId={w.appId} />
                     ) : (

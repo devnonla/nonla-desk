@@ -1,8 +1,8 @@
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react'
 import { loadGeometry } from '@/lib/window-geometry'
 
-/** What a desktop window shows: a running mini app, its read-only details, or the Nonla Desk page. */
-export type WindowKind = 'app' | 'info' | 'about'
+/** What a desktop window shows: a running mini app, its read-only details, the Nonla Desk page, or Import. */
+export type WindowKind = 'app' | 'info' | 'about' | 'import'
 
 export interface DeskWindow {
   key: string

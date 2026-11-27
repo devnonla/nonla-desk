@@ -8,7 +8,7 @@ const REPO = 'https://github.com/devnonla/nonla-desk'
 
 const SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ['⌘', 'K'], label: 'Search and open apps' },
-  { keys: ['⌘', 'O'], label: 'Import a mini app (.zip)' },
+  { keys: ['⌘', 'O'], label: 'Import a mini app (zip or marketplace)' },
   { keys: ['⌘', 'B'], label: 'Back to all apps' },
   { keys: ['⇧', '↑'], label: 'Expand or restore the focused window' },
 ]

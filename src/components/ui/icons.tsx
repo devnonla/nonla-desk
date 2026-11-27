@@ -116,3 +116,4 @@ export const ShieldOff = drawn(
 )
 /** Spinner: add `animate-spin` where it is used. */
 export const Loader2 = drawn(<path d="M21 12a9 9 0 1 1-6.2-8.6" />)
+export const Check = drawn(<path d="M20 6 9 17l-5-5" />)

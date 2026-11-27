@@ -433,6 +433,51 @@ pub fn show(reference: &str) -> Result<Value, String> {
     }))
 }
 
+/// The Import window's marketplace tab: refresh the marketplace at `source`
+/// if it is already added (same remote), add it otherwise, and list its apps.
+pub fn open(source: &str) -> Result<Value, String> {
+    let url = clone_url(source.trim());
+    let norm = |s: &str| {
+        s.trim()
+            .trim_end_matches('/')
+            .trim_end_matches(".git")
+            .to_lowercase()
+    };
+    let known = list_markets()?
+        .into_iter()
+        .find(|m| m["source"].as_str().is_some_and(|s| norm(s) == norm(&url)))
+        .and_then(|m| m["name"].as_str().map(str::to_string));
+    let name = match known {
+        Some(n) => {
+            update(Some(&n))?;
+            n
+        }
+        None => add(source.trim(), None)?["name"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
+    };
+    Ok(json!({ "name": name, "source": url, "apps": apps(Some(&name))? }))
+}
+
+/// One marketplace app, checked like a zip before it is installed (`Bundle::inspect`).
+pub fn inspect(reference: &str) -> Result<Value, String> {
+    let (app, market) = split_ref(reference)?;
+    let dir = market_dir(&market)?;
+    let entry = find_entry(&dir, &app)?;
+    let name = entry_name(&entry).to_string();
+    let mut v = miniapp::bundle_from_dir(&source_dir(&dir, &entry)?)?.inspect()?;
+    if v["id"].as_str() != Some(name.as_str()) {
+        return Err(format!(
+            "marketplace.json lists \"{name}\" but its manifest.json has the id \"{}\"",
+            v["id"].as_str().unwrap_or("")
+        ));
+    }
+    v["market"] = json!(market);
+    v["commit"] = json!(git(Some(&dir), &["rev-parse", "--short", "HEAD"]).unwrap_or_default());
+    Ok(v)
+}
+
 /// Import an app from a marketplace. It lands disabled (updates keep their
 /// state). An app of the same name that did not come from this marketplace
 /// entry is never overwritten unless `force`.
