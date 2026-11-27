@@ -73,6 +73,14 @@ fn ensure_slugs(conn: &Connection) -> rusqlite::Result<()> {
     if !has {
         conn.execute("ALTER TABLE mini_apps ADD COLUMN slug TEXT", [])?;
     }
+    // Marketplace an app was installed from (`market.rs`); NULL for local apps.
+    let has_market = conn
+        .prepare("PRAGMA table_info(mini_apps)")?
+        .query_map([], |r| r.get::<_, String>(1))?
+        .any(|n| n.is_ok_and(|n| n == "market"));
+    if !has_market {
+        conn.execute("ALTER TABLE mini_apps ADD COLUMN market TEXT", [])?;
+    }
     let todo: Vec<(String, String)> = conn
         .prepare("SELECT id, name FROM mini_apps WHERE slug IS NULL ORDER BY created_at")?
         .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?

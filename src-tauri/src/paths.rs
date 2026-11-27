@@ -65,8 +65,3 @@ pub fn app_dir(id: &str) -> PathBuf {
 pub fn markets_dir() -> PathBuf {
     root_dir().join("markets")
 }
-
-/// Which marketplace app each installed mini app came from (`market.rs`).
-pub fn installed_file() -> PathBuf {
-    root_dir().join("market-installed.json")
-}

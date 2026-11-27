@@ -25,6 +25,9 @@ pub struct MiniApp {
     pub id: String,
     /// Unique, stable, human id: `color-picker`. Never changes after creation.
     pub slug: String,
+    /// Marketplace it was installed from (`market install`); none for apps made
+    /// here or imported from a zip. Otherwise it is an app like any other.
+    pub market: Option<String>,
     pub name: String,
     pub description: String,
     pub icon: String,
@@ -42,6 +45,7 @@ impl MiniApp {
         Ok(Self {
             id: r.get("id")?,
             slug: r.get("slug")?,
+            market: r.get("market")?,
             name: r.get("name")?,
             description: r.get("description")?,
             icon: r.get("icon")?,
@@ -224,6 +228,17 @@ pub fn find_by_slug(slug: &str) -> Result<Option<MiniApp>, String> {
             None => Ok(None),
         }
     })
+}
+
+/// Record which marketplace an app came from (`None` clears it).
+pub fn set_market(id: &str, market: Option<&str>) -> Result<(), String> {
+    db::with(|c| {
+        c.execute(
+            "UPDATE mini_apps SET market = ?1 WHERE id = ?2",
+            rusqlite::params![market, id],
+        )
+    })
+    .map(|_| ())
 }
 
 /// App identity is the name (case-insensitive, trimmed). Used to prevent clones.

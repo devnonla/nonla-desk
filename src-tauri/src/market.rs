@@ -13,7 +13,7 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 
-use serde_json::{json, Map, Value};
+use serde_json::{json, Value};
 
 use crate::miniapp::{self, ImportResult};
 use crate::paths;
@@ -197,25 +197,15 @@ fn split_ref(reference: &str) -> Result<(String, String), String> {
     }
 }
 
-// ─── market-installed.json ───────────────────────────────────────────────────
+// ─── Installed apps ──────────────────────────────────────────────────────────
 
-fn installed() -> Map<String, Value> {
-    read_json(&paths::installed_file())
+/// The installed mini app that came from this marketplace entry. Its id
+/// (slug) equals the entry name, and its `market` column names the marketplace.
+fn installed_from(market: &str, app: &str) -> Option<miniapp::MiniApp> {
+    miniapp::find_by_slug(app)
         .ok()
-        .and_then(|v| v.as_object().cloned())
-        .unwrap_or_default()
-}
-
-fn save_installed(map: &Map<String, Value>) -> Result<(), String> {
-    let text = serde_json::to_string_pretty(map).map_err(|e| e.to_string())?;
-    fs::write(paths::installed_file(), text).map_err(|e| e.to_string())
-}
-
-fn installed_from(market: &str, app: &str) -> Option<String> {
-    installed()
-        .into_iter()
-        .find(|(_, v)| v["market"].as_str() == Some(market) && v["app"].as_str() == Some(app))
-        .map(|(id, _)| id)
+        .flatten()
+        .filter(|a| a.market.as_deref() == Some(market))
 }
 
 // ─── Marketplaces ────────────────────────────────────────────────────────────
@@ -344,7 +334,7 @@ pub fn apps(market: Option<&str>) -> Result<Value, String> {
                 .and_then(|m| m["version"].as_str().map(str::to_string))
                 .or_else(|| e["version"].as_str().map(str::to_string))
                 .unwrap_or_default();
-            let inst = installed_from(&m, &name).and_then(|id| miniapp::get(&id).ok().flatten());
+            let inst = installed_from(&m, &name);
             out.push(json!({
                 "name": name,
                 "market": m,
@@ -390,9 +380,7 @@ pub fn diff(reference: &str) -> Result<Value, String> {
     let entry = find_entry(&dir, &app)?;
     let name = entry_name(&entry).to_string();
     let src = source_dir(&dir, &entry)?;
-    let installed = installed_from(&market, &name)
-        .and_then(|id| miniapp::get(&id).ok().flatten())
-        .ok_or_else(|| {
+    let installed = installed_from(&market, &name).ok_or_else(|| {
             format!("{name} is not installed from {market}; review it with `nonladesk market show {name}@{market}`")
         })?;
     let new_version = read_json(&src.join("manifest.json"))
@@ -470,7 +458,7 @@ pub fn install(reference: &str, force: bool) -> Result<ImportResult, String> {
         ));
     }
     if let Some(existing) = miniapp::find_by_slug(&id)? {
-        let ours = installed_from(&market, &name).is_some_and(|id| id == existing.id);
+        let ours = existing.market.as_deref() == Some(market.as_str());
         if !ours && !force {
             return Err(format!(
                 "A mini app with the id \"{id}\" (\"{}\") already exists and was not installed \
@@ -479,27 +467,10 @@ pub fn install(reference: &str, force: bool) -> Result<ImportResult, String> {
             ));
         }
     }
-    let result = miniapp::import_bundle(bundle, true)?;
-    let mut map = installed();
-    map.insert(
-        result.app.id.clone(),
-        json!({
-            "market": market,
-            "app": name,
-            "version": result.app.version,
-            "commit": git(Some(&dir), &["rev-parse", "HEAD"]).unwrap_or_default(),
-        }),
-    );
-    save_installed(&map)?;
+    let mut result = miniapp::import_bundle(bundle, true)?;
+    miniapp::set_market(&result.app.id, Some(&market))?;
+    result.app.market = Some(market);
     Ok(result)
-}
-
-/// Forget the marketplace link of a deleted app.
-pub fn forget(app_id: &str) {
-    let mut map = installed();
-    if map.remove(app_id).is_some() {
-        let _ = save_installed(&map);
-    }
 }
 
 /// Copy an app into a marketplace checkout and list it in marketplace.json.

@@ -138,7 +138,6 @@ pub async fn delete(app: &AppHandle, id: &str) -> Result<bool, String> {
     let deleted = miniapp::delete(id)?;
     if deleted {
         let _ = bundle::uninstall(id);
-        crate::market::forget(id);
         broadcast(
             app,
             ChangeEvent {

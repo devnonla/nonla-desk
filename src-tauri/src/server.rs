@@ -333,7 +333,11 @@ async fn dispatch(app: &AppHandle, cmd: &str, args: &Value) -> Result<Value, Str
                 let bytes = std::fs::read(&path).map_err(|e| format!("{}: {e}", path.display()))?;
                 miniapp::bundle_from_zip(&bytes)?
             };
-            let result = miniapp::import_bundle(bundle, args["force"].as_bool() == Some(true))?;
+            let mut result = miniapp::import_bundle(bundle, args["force"].as_bool() == Some(true))?;
+            // Local code now: a marketplace no longer updates it.
+            if result.app.market.take().is_some() {
+                miniapp::set_market(&result.app.id, None)?;
+            }
             Ok(ops::import(app, result).await)
         }
 
