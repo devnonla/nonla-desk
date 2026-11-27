@@ -33,7 +33,7 @@ const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)'
 const CLOSE_TRANSITION = 'opacity 150ms cubic-bezier(0.4, 0, 1, 1)'
 const MIN_W = 380
 const MIN_H = 260
-const TITLE_H = 30
+const TITLE_H = 36
 
 function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -372,17 +372,17 @@ export function DesktopWindow({
               : `${geom}opacity ${duration} ${EASE}, transform ${duration} ${EASE}, box-shadow 200ms ${EASE}`,
         }}
         className={`absolute flex flex-col pointer-events-auto bg-(--color-canvas-soft) motion-reduce:scale-100 ${
-          expanded ? 'rounded-none' : 'rounded-[10px]'
+          expanded ? 'rounded-none' : 'rounded-xl'
         } ${
           focused
-            ? 'shadow-[0_24px_70px_rgba(0,0,0,0.32),0_0_0_0.5px_rgba(0,0,0,0.28)]'
-            : 'shadow-[0_12px_36px_rgba(0,0,0,0.18),0_0_0_0.5px_rgba(0,0,0,0.18)]'
+            ? 'shadow-[0_24px_64px_-12px_rgba(0,0,0,0.38),0_0_0_0.5px_rgba(0,0,0,0.16)]'
+            : 'shadow-[0_12px_32px_-8px_rgba(0,0,0,0.2),0_0_0_0.5px_rgba(0,0,0,0.12)]'
         } ${shown ? 'opacity-100 scale-100' : phase === 'leaving' ? 'opacity-0 scale-100' : 'opacity-0 scale-[0.18]'} ${
           phase === 'leaving' ? 'pointer-events-none' : ''
         }`}
       >
-        {/* Title bar: traffic lights left, icon + title centered; drag to move,
-            double-click to zoom. */}
+        {/* Title bar, flat and the same white as the page (current macOS look):
+            traffic lights left, icon + title centered; drag to move, double-click to zoom. */}
         <header
           {...gestureHandlers(null)}
           onDoubleClick={(e) => {
@@ -390,12 +390,8 @@ export function DesktopWindow({
           }}
           style={{ height: TITLE_H }}
           className={`relative flex items-center shrink-0 select-none touch-none border-b ${
-            expanded ? '' : 'rounded-t-[10px]'
-          } ${
-            focused
-              ? 'bg-linear-to-b from-[#f8f7f4] to-[#efeee9] border-black/10'
-              : 'bg-[#f6f5f2] border-black/6'
-          }`}
+            expanded ? '' : 'rounded-t-xl'
+          } ${focused ? 'bg-white border-black/6' : 'bg-white border-black/4'}`}
         >
           <TrafficLights
             focused={focused}
@@ -406,8 +402,8 @@ export function DesktopWindow({
           <div className="absolute inset-x-24 inset-y-0 flex items-center justify-center gap-1.5 pointer-events-none">
             {icon ? <AppIcon name={icon} svg={iconSvg} size={16} /> : null}
             <h2
-              className={`m-0 truncate text-[13px] font-semibold tracking-[-0.1px] ${
-                focused ? 'text-[#2b2b2a]' : 'text-[#9b9a95]'
+              className={`m-0 truncate text-[13px] font-medium tracking-[-0.1px] ${
+                focused ? 'text-neutral-800' : 'text-neutral-400'
               }`}
             >
               {title}
@@ -416,7 +412,7 @@ export function DesktopWindow({
         </header>
 
         <div
-          className={`flex-1 min-h-0 overflow-hidden ${expanded ? '' : 'rounded-b-[10px]'} ${
+          className={`flex-1 min-h-0 overflow-hidden ${expanded ? '' : 'rounded-b-xl'} ${
             gesture ? 'pointer-events-none' : ''
           }`}
         >
