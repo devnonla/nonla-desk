@@ -392,9 +392,9 @@ export function DesktopWindow({
             if (!(e.target as HTMLElement).closest('button')) onToggleExpand()
           }}
           style={{ height: TITLE_H }}
-          className={`relative flex items-center shrink-0 select-none touch-none border-b ${
+          className={`relative flex items-center shrink-0 select-none touch-none ${
             expanded ? '' : 'rounded-t-xl'
-          } ${focused ? 'bg-transparent border-black/8' : 'bg-white/20 border-black/5'}`}
+          } ${focused ? 'bg-transparent' : 'bg-white/20'}`}
         >
           <TrafficLights
             focused={focused}
