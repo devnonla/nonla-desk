@@ -228,7 +228,7 @@ function AppsPane({ market }: { market: ReturnType<typeof useMarketUpdates> }) {
         {markets.length === 0 ? (
           <Paragraph className="text-muted-foreground">
             None yet. Ask your agent to add one, or run{' '}
-            <code>nonladesk market add devnonla/nonla-desk</code> (any <code>user/repo</code>{' '}
+            <code>nonladesk market add devnonla/nonladesk-apps</code> (any <code>user/repo</code>{' '}
             works).
           </Paragraph>
         ) : (

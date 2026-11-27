@@ -1,8 +1,0 @@
-{
-  "category": "Utilities",
-  "description": "Local time in a few cities",
-  "icon": "Box",
-  "id": "world-clock",
-  "name": "World Clock",
-  "version": "1.0.0"
-}

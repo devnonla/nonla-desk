@@ -48,7 +48,7 @@ apps/<id>/{manifest.json, frontend/index.jsx, backend/index.js, panel/index.jsx,
   "apps": [ { "name": "color-picker", "source": "./apps/color-picker", "version": "1.0.0", "description": "…", "category": "Dev Tools" } ] }
 ```
 
-`name` must equal the app's manifest `id`; `source` is a path inside the repo. App folders hold plain files only (symlinks are refused). The version shown to users comes from each app's `manifest.json`. An app is addressed as `<id>@<market>`. The Nonla Desk repo itself is a marketplace: `nonladesk market add devnonla/nonla-desk`.
+`name` must equal the app's manifest `id`; `source` is a path inside the repo. App folders hold plain files only (symlinks are refused). The version shown to users comes from each app's `manifest.json`. An app is addressed as `<id>@<market>`. The official one is `nonladesk market add devnonla/nonladesk-apps`.
 
 | Do | Command |
 |---|---|
