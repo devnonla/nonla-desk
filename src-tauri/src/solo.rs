@@ -213,6 +213,20 @@ fn bundle_gone() -> bool {
     }) == Some(false)
 }
 
+/// Quit for good: drop the menu bar icon and windows first so nothing lingers
+/// if the exit is slow, and force the process down if it does not leave.
+fn quit(app: &AppHandle) {
+    app.remove_tray_by_id(TRAY_ID);
+    for (_, w) in app.webview_windows() {
+        let _ = w.hide();
+    }
+    std::thread::spawn(|| {
+        std::thread::sleep(Duration::from_secs(2));
+        std::process::exit(0);
+    });
+    app.exit(0);
+}
+
 async fn watch(app: AppHandle, first: MiniApp) {
     let id = first.id.clone();
     let mut seen = (first.updated_at.clone(), first.enabled, signature(&first));
@@ -221,13 +235,13 @@ async fn watch(app: AppHandle, first: MiniApp) {
         tokio::time::sleep(Duration::from_secs(1)).await;
         // Removed from the desktop ("Remove Native App"): quit and free the backend.
         if bundle_gone() {
-            app.exit(0);
+            quit(&app);
             return;
         }
         let rec = match miniapp::get(&id) {
             Ok(Some(rec)) => rec,
             Ok(None) => {
-                app.exit(0);
+                quit(&app);
                 return;
             }
             Err(_) => continue,
