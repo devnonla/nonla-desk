@@ -249,10 +249,8 @@ pub async fn install_standalone(app: AppHandle, id: String) -> Result<String, St
 }
 
 #[tauri::command]
-pub fn uninstall_standalone(app: AppHandle, id: String) -> Result<bool, String> {
-    let removed = bundle::uninstall(&id)?.is_some();
-    ops::broadcast(&app, ops::ChangeEvent::metadata(&id));
-    Ok(removed)
+pub async fn uninstall_standalone(app: AppHandle, id: String) -> Result<bool, String> {
+    Ok(ops::uninstall_standalone(&app, &id).await?.is_some())
 }
 
 #[tauri::command]

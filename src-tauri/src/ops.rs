@@ -64,6 +64,46 @@ fn refresh_standalone(app: &AppHandle, id: &str) {
     }
 }
 
+/// Remove an app's standalone bundle and hand its backend back to the desktop.
+/// The standalone app quits itself once its bundle is gone (`solo::watch`); the
+/// desktop starts the backend again as soon as the standalone app lets go of it.
+pub async fn uninstall_standalone(
+    app: &AppHandle,
+    id: &str,
+) -> Result<Option<std::path::PathBuf>, String> {
+    let path = bundle::uninstall(id)?;
+    // The desktop still runs the backend when the standalone app was never opened.
+    if path.is_some() && !backend::is_running(id) {
+        if let Some(rec) = miniapp::get(id)?.filter(|r| r.enabled) {
+            let (app, id) = (app.clone(), id.to_string());
+            tauri::async_runtime::spawn(async move {
+                for _ in 0..40 {
+                    if !backend::owned_elsewhere(&id) {
+                        break;
+                    }
+                    tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+                }
+                if backend::start(&app, &rec).await.is_ok() && backend::is_running(&id) {
+                    // Open windows asked the backend for their data while it was
+                    // away: remount them so they ask again.
+                    broadcast(
+                        &app,
+                        ChangeEvent {
+                            action: "updated",
+                            id: id.clone(),
+                            enabled: Some(true),
+                            code_changed: Some(true),
+                            metadata_changed: None,
+                        },
+                    );
+                }
+            });
+        }
+    }
+    broadcast(app, ChangeEvent::metadata(id));
+    Ok(path)
+}
+
 pub async fn load_all(app: &AppHandle) {
     let Ok(apps) = miniapp::list() else { return };
     for rec in apps.into_iter().filter(|a| a.enabled) {

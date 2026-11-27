@@ -203,12 +203,27 @@ fn signature(rec: &MiniApp) -> Vec<Option<SystemTime>> {
         .collect()
 }
 
+fn bundle_gone() -> bool {
+    std::env::current_exe().ok().and_then(|e| {
+        e.parent()?
+            .parent()?
+            .join("Resources/solo.json")
+            .try_exists()
+            .ok()
+    }) == Some(false)
+}
+
 async fn watch(app: AppHandle, first: MiniApp) {
     let id = first.id.clone();
     let mut seen = (first.updated_at.clone(), first.enabled, signature(&first));
     let mut name = first.name;
     loop {
         tokio::time::sleep(Duration::from_secs(1)).await;
+        // Removed from the desktop ("Remove Native App"): quit and free the backend.
+        if bundle_gone() {
+            app.exit(0);
+            return;
+        }
         let rec = match miniapp::get(&id) {
             Ok(Some(rec)) => rec,
             Ok(None) => {

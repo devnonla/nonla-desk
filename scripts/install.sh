@@ -119,7 +119,7 @@ CLI_DIR="$HOME/.local/bin"
 mkdir -p "$CLI_DIR"
 rm -f "$CLI_DIR/nonla" # old name of the CLI
 ln -sf "${INSTALL_DIR}/${APP_BASENAME}/Contents/MacOS/nonla-desk" "$CLI_DIR/nonladesk"
-echo -e "  CLI linked: ${CYAN}${CLI_DIR}/nonla${NC}"
+echo -e "  CLI linked: ${CYAN}${CLI_DIR}/nonladesk${NC}"
 case ":$PATH:" in
   *":$CLI_DIR:"*) ;;
   *) echo -e "${YELLOW}  Add ${CLI_DIR} to your PATH:${NC} ${DIM}echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.zshrc${NC}" ;;

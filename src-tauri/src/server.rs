@@ -238,8 +238,7 @@ async fn dispatch(app: &AppHandle, cmd: &str, args: &Value) -> Result<Value, Str
 
         "uninstall" => {
             let rec = miniapp::resolve(&req(args, "app")?)?;
-            let path = bundle::uninstall(&rec.id)?;
-            ops::broadcast(app, ops::ChangeEvent::metadata(&rec.id));
+            let path = ops::uninstall_standalone(app, &rec.id).await?;
             Ok(json!({ "id": rec.id, "name": rec.name, "removed": path }))
         }
 

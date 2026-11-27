@@ -160,6 +160,20 @@ async fn acquire_lock(app_id: &str) -> Option<std::fs::File> {
     None
 }
 
+/// True while another process (the standalone app) holds this app's backend lock.
+pub fn owned_elsewhere(app_id: &str) -> bool {
+    let dir = paths::root_dir().join("run");
+    let Ok(file) = std::fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .open(dir.join(format!("{app_id}.lock")))
+    else {
+        return false;
+    };
+    matches!(file.try_lock(), Err(std::fs::TryLockError::WouldBlock))
+}
+
 /// Start the backend for `rec` if it has one. Stops a running instance first.
 pub async fn start(app: &AppHandle, rec: &MiniApp) -> Result<(), String> {
     let id = rec.id.clone();
