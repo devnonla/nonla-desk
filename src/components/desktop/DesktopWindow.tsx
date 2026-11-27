@@ -371,18 +371,20 @@ export function DesktopWindow({
               ? CLOSE_TRANSITION
               : `${geom}opacity ${duration} ${EASE}, transform ${duration} ${EASE}, box-shadow 200ms ${EASE}`,
         }}
-        className={`absolute flex flex-col pointer-events-auto bg-(--color-canvas-soft) motion-reduce:scale-100 ${
+        className={`absolute flex flex-col pointer-events-auto bg-white/45 backdrop-blur-2xl backdrop-saturate-[1.8] motion-reduce:scale-100 ${
           expanded ? 'rounded-none' : 'rounded-xl'
         } ${
           focused
-            ? 'shadow-[0_24px_64px_-12px_rgba(0,0,0,0.38),0_0_0_0.5px_rgba(0,0,0,0.16)]'
+            ? 'shadow-[0_24px_64px_-12px_rgba(0,0,0,0.38),0_0_0_0.5px_rgba(0,0,0,0.18)]'
             : 'shadow-[0_12px_32px_-8px_rgba(0,0,0,0.2),0_0_0_0.5px_rgba(0,0,0,0.12)]'
         } ${shown ? 'opacity-100 scale-100' : phase === 'leaving' ? 'opacity-0 scale-100' : 'opacity-0 scale-[0.18]'} ${
           phase === 'leaving' ? 'pointer-events-none' : ''
         }`}
       >
-        {/* Title bar, flat and the same white as the page (current macOS look):
-            traffic lights left, icon + title centered; drag to move, double-click to zoom. */}
+        {/* Liquid glass: the frame is frosted glass over the wallpaper (blur, extra
+            saturation); the title bar is that glass, the page below
+            stays solid so apps read well. Traffic lights left, icon + title centered;
+            drag to move, double-click to zoom. */}
         <header
           {...gestureHandlers(null)}
           onDoubleClick={(e) => {
@@ -391,7 +393,7 @@ export function DesktopWindow({
           style={{ height: TITLE_H }}
           className={`relative flex items-center shrink-0 select-none touch-none border-b ${
             expanded ? '' : 'rounded-t-xl'
-          } ${focused ? 'bg-white border-black/6' : 'bg-white border-black/4'}`}
+          } ${focused ? 'bg-transparent border-black/8' : 'bg-white/20 border-black/5'}`}
         >
           <TrafficLights
             focused={focused}
@@ -412,7 +414,7 @@ export function DesktopWindow({
         </header>
 
         <div
-          className={`flex-1 min-h-0 overflow-hidden ${expanded ? '' : 'rounded-b-xl'} ${
+          className={`flex-1 min-h-0 overflow-hidden bg-(--color-canvas-soft) ${expanded ? '' : 'rounded-b-xl'} ${
             gesture ? 'pointer-events-none' : ''
           }`}
         >
