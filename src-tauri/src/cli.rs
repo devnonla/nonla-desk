@@ -17,8 +17,8 @@ const GUIDE_DEVELOP: &str =
     include_str!("../../plugins/nonla-desk/skills/nonla-desk/references/develop.md");
 const GUIDE_ICON: &str =
     include_str!("../../plugins/nonla-desk/skills/nonla-desk/references/icon.md");
-const GUIDE_PUBLISH: &str =
-    include_str!("../../plugins/nonla-desk/skills/nonla-market/references/publish.md");
+const GUIDE_SHARE: &str =
+    include_str!("../../plugins/nonla-desk/skills/nonla-market/references/share.md");
 const GUIDE_REVIEW: &str =
     include_str!("../../plugins/nonla-desk/skills/nonla-market/references/review.md");
 
@@ -172,14 +172,14 @@ enum Cmd {
         #[arg(short, long)]
         out: Option<PathBuf>,
     },
-    /// Share mini apps through marketplaces (GitHub repos with a marketplace.json)
+    /// Install mini apps from marketplaces (git repos with a marketplace.json)
     #[command(subcommand)]
     Market(MarketCmd),
     /// App version, JS runtime (Bun/Node) and paths
     Status,
-    /// Print a guide: develop (default), icon, publish or review
+    /// Print a guide: develop (default), icon, share or review
     Guide {
-        #[arg(value_parser = ["develop", "icon", "publish", "review"])]
+        #[arg(value_parser = ["develop", "icon", "share", "review"])]
         topic: Option<String>,
     },
 }
@@ -221,12 +221,6 @@ enum MarketCmd {
         /// Overwrite an existing app with the same id that came from elsewhere
         #[arg(long)]
         force: bool,
-    },
-    /// Copy an app into a marketplace checkout (a marketplace name or a directory)
-    Publish {
-        app: String,
-        #[arg(long)]
-        to: String,
     },
 }
 
@@ -461,23 +455,6 @@ fn run_market(cmd: &MarketCmd, out: &dyn Fn(&Value, Human)) -> Result<i32, Strin
                 }
             });
         }
-        MarketCmd::Publish { app, to } => {
-            let target = if to.contains('/') || to.starts_with('.') {
-                absolute(Path::new(to))
-            } else {
-                to.clone()
-            };
-            let v = call("market_publish", json!({ "app": app, "to": target }))?;
-            out(&v, &|v| {
-                println!(
-                    "Published \"{}\" {} to {}/{}.\nNext: git add, commit and push that repo.",
-                    s(v, "name"),
-                    s(v, "version"),
-                    s(v, "dir"),
-                    s(v, "source")
-                )
-            });
-        }
     }
     Ok(0)
 }
@@ -497,7 +474,7 @@ fn execute(cli: &Cli) -> Result<i32, String> {
                 "{}",
                 match topic.as_deref() {
                     Some("icon") => GUIDE_ICON,
-                    Some("publish") => GUIDE_PUBLISH,
+                    Some("share") => GUIDE_SHARE,
                     Some("review") => GUIDE_REVIEW,
                     _ => GUIDE_DEVELOP,
                 }

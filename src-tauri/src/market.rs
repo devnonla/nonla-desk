@@ -283,14 +283,6 @@ pub fn update(name: Option<&str>) -> Result<Value, String> {
     let mut res = Vec::new();
     for n in names {
         let dir = market_dir(&n)?;
-        // `market publish` writes into the clone: never wipe work that is not pushed yet.
-        if git(Some(&dir), &["status", "--porcelain"]).is_ok_and(|s| !s.is_empty()) {
-            res.push(json!({
-                "name": n,
-                "error": "has uncommitted changes (published apps?). Commit and push them from its folder first",
-            }));
-            continue;
-        }
         let before = git(Some(&dir), &["rev-parse", "HEAD"]).unwrap_or_default();
         // The clone is ours: follow the remote even after a force-push.
         let pulled = git(Some(&dir), &["fetch", "--depth", "1", "origin"])
@@ -471,68 +463,6 @@ pub fn install(reference: &str, force: bool) -> Result<ImportResult, String> {
     miniapp::set_market(&result.app.id, Some(&market))?;
     result.app.market = Some(market);
     Ok(result)
-}
-
-/// Copy an app into a marketplace checkout and list it in marketplace.json.
-/// `to` is an added marketplace name, or a directory (created when new).
-/// Nothing is committed or pushed: the author does that.
-pub fn publish(app: &str, to: &str) -> Result<Value, String> {
-    let rec = miniapp::resolve(app)?;
-    let (dir, name) = if valid_name(to) && paths::markets_dir().join(to).join(FILE).is_file() {
-        (paths::markets_dir().join(to), to.to_string())
-    } else {
-        let dir = PathBuf::from(to);
-        if !dir.is_absolute() {
-            return Err(format!(
-                "No marketplace named \"{to}\" is added. Pass an added marketplace's name or a folder path (./{to})."
-            ));
-        }
-        fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-        let name = dir
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_else(|| "marketplace".into());
-        (dir, name)
-    };
-    let file_path = dir.join(FILE);
-    let mut file = if file_path.is_file() {
-        read_json(&file_path)?
-    } else {
-        json!({ "name": slug(&name), "owner": { "name": "" }, "description": "", "apps": [] })
-    };
-
-    let rel = format!("apps/{}", rec.slug);
-    let dest = dir.join(&rel);
-    let _ = fs::remove_dir_all(&dest);
-    fs::create_dir_all(&dest).map_err(|e| e.to_string())?;
-    for (path, content) in miniapp::bundle_files(&rec.id)? {
-        let target = dest.join(path);
-        if let Some(parent) = target.parent() {
-            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-        }
-        fs::write(target, content).map_err(|e| e.to_string())?;
-    }
-
-    let entry = json!({
-        "name": rec.slug,
-        "source": format!("./{rel}"),
-        "description": rec.description,
-        "version": rec.version,
-        "category": rec.category,
-    });
-    let list = file["apps"]
-        .as_array_mut()
-        .ok_or("marketplace.json: \"apps\" is not a list")?;
-    match list.iter_mut().find(|e| entry_name(e) == rec.slug) {
-        Some(slot) => *slot = entry,
-        None => list.push(entry),
-    }
-    fs::write(
-        &file_path,
-        serde_json::to_string_pretty(&file).unwrap_or_default(),
-    )
-    .map_err(|e| e.to_string())?;
-    Ok(json!({ "name": rec.slug, "version": rec.version, "dir": dir, "source": rel }))
 }
 
 #[cfg(test)]

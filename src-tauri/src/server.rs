@@ -396,10 +396,6 @@ async fn dispatch(app: &AppHandle, cmd: &str, args: &Value) -> Result<Value, Str
             let result = blocking(move || market::install(&reference, force)).await?;
             Ok(ops::import(app, result).await)
         }
-        "market_publish" => {
-            let (name, to) = (req(args, "app")?, req(args, "to")?);
-            blocking(move || market::publish(&name, &to)).await
-        }
 
         other => Err(format!(
             "Unknown command \"{other}\". Run `nonladesk --help`."

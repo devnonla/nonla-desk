@@ -61,7 +61,7 @@ Same model as open-agent-hands. `tauri-plugin-updater` is compiled in only when 
 - Tailwind never scans mini app code: classes they may use must be in `src/lib/miniapp-tailwind-safelist.ts`. Don't prune it.
 
 ### Plugin
-`plugins/nonla-desk/` is the Claude Code plugin (marketplace in `.claude-plugin/marketplace.json`) with two skills. `skills/nonla-desk/` is local only: `SKILL.md` (short index) and `references/` `install.md`, `develop.md`, `icon.md`. `skills/nonla-market/` is sharing: `SKILL.md` and `references/` `publish.md` (zip, marketplace, publishing) and `review.md` (the read-every-file procedure before installing someone else's app). `develop`, `icon`, `publish` and `review` are compiled into the CLI (`nonladesk guide [develop|icon|publish|review]`, `include_str!` in `cli.rs`). Keep them in step with CLI commands and the `ctx` API.
+`plugins/nonla-desk/` is the Claude Code plugin (marketplace in `.claude-plugin/marketplace.json`) with two skills. `skills/nonla-desk/` is local only: `SKILL.md` (short index) and `references/` `install.md`, `develop.md`, `icon.md`. `skills/nonla-market/` is sharing: `SKILL.md` and `references/` `share.md` (commands, zip and marketplace format) and `review.md` (the read-every-file procedure before installing someone else's app). `develop`, `icon`, `share` and `review` are compiled into the CLI (`nonladesk guide [develop|icon|share|review]`, `include_str!` in `cli.rs`). Keep them in step with CLI commands and the `ctx` API.
 
 ## Conventions
 

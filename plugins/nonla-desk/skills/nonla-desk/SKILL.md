@@ -10,7 +10,7 @@ macOS app that hosts **mini apps**, created and changed with the `nonladesk` CLI
 - Not installed, or `nonladesk status` fails: [references/install.md](references/install.md)
 - Before writing code: [references/develop.md](references/develop.md) (`nonladesk guide`)
 - Icon for every app: [references/icon.md](references/icon.md) (`nonladesk guide icon`)
-- Publish an app, or install one from someone else: the **nonla-market** skill
+- Install an app from someone else (marketplace, zip) or send one as a zip: the **nonla-market** skill
 
 ## Commands
 
