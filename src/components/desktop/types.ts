@@ -7,6 +7,8 @@ export interface AppItem {
   iconSvg?: string | null
   version: string
   enabled: boolean
+  /** Marketplace it was installed from (`nonladesk market install`); none for local apps. */
+  market?: string | null
   /** Installed as its own macOS app: opening it launches that app. */
   standalone?: boolean
 }

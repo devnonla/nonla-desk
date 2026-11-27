@@ -24,45 +24,6 @@ export interface MiniAppLogEvent {
   args: string[]
 }
 
-/** A marketplace added with `nonladesk market add`. */
-export interface Marketplace {
-  name: string
-  /** Where it was cloned from (git URL or path). */
-  source: string
-  /** How many apps it lists. */
-  apps: number
-  description: string | null
-}
-
-/** An installed app whose marketplace has a newer version. */
-export interface MarketUpdate {
-  /** The app id (`color-picker`). */
-  name: string
-  market: string
-  /** The newer version in the marketplace. */
-  version: string
-  /** The installed version. */
-  installed: string
-  appId: string
-  title: string
-}
-
-/** An app listed by an added marketplace, with its install state. */
-export interface MarketApp {
-  /** The app id (`color-picker`). */
-  name: string
-  market: string
-  version: string
-  description: string | null
-  category: string | null
-  /** Installed version, when it was installed from this marketplace. */
-  installed: string | null
-  appId: string | null
-  title: string | null
-  /** The marketplace has a newer version than the installed one. */
-  update: boolean
-}
-
 export interface CheckRequest {
   requestId: string
   files: { frontend?: string; backend?: string; panel?: string }
@@ -279,27 +240,6 @@ export const api = {
   /** A newer version was found (its number) or the pending one is gone (null). */
   onUpdatePending: (callback: (version: string | null) => void) =>
     on<string | null>('update:pending', callback),
-
-  // Marketplaces (src-tauri/src/market.rs). Installs land disabled; the UI
-  // warns first and offers a review prompt for the user's agent.
-  /** Installed marketplace apps with a newer version. `refresh` fetches the marketplaces first. */
-  marketOutdated: (refresh = false) =>
-    invoke<{ markets: Marketplace[]; apps: MarketUpdate[] }>('market_outdated', { refresh }),
-  /** Add a marketplace: `user/repo`, a git URL or a local path. */
-  marketAdd: (source: string) =>
-    attempt(() => invoke<{ name: string; apps: number }>('market_add', { source })),
-  marketRemove: (name: string) => attempt(() => invoke<object>('market_remove', { name })),
-  /** Every app of every added marketplace. */
-  marketApps: () => invoke<MarketApp[]>('market_apps'),
-  /** Install or update one app (`<id>@<market>`). New apps are installed disabled. */
-  marketInstall: (reference: string) =>
-    attempt(() =>
-      invoke<{ id: string; name: string; updated: boolean; enabled: boolean }>('market_install', {
-        reference,
-      }),
-    ),
-  /** The marketplaces were refreshed (in the background or by the CLI). */
-  onMarketChecked: (callback: () => void) => on<null>('market:checked', () => callback()),
 
   // Tray panel
   hideTray: () => invoke<void>('hide_tray'),

@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom'
 
 export type ContextMenuItem =
   | { type: 'separator'; key: string }
+  /** Plain text, not clickable: what the thing is. */
+  | { type: 'label'; key: string; label: string }
   | {
       type?: 'item'
       key: string
@@ -84,6 +86,16 @@ export function ContextMenu({ open, x, y, items, label, onClose }: ContextMenuPr
           if (item.type === 'separator') {
             return (
               <div key={item.key} aria-hidden="true" className="h-px my-1 bg-(--color-hairline)" />
+            )
+          }
+          if (item.type === 'label') {
+            return (
+              <div
+                key={item.key}
+                className="px-2.5 py-1.5 text-[11px] leading-4 text-(--color-mute) max-w-60 truncate"
+              >
+                {item.label}
+              </div>
             )
           }
           return (

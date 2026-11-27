@@ -95,6 +95,14 @@ export function DesktopIcon({
         onClose={() => setMenu(null)}
         items={[
           {
+            type: 'label',
+            key: 'source',
+            label: app.market
+              ? `From ${app.market} · v${app.version}`
+              : `Local app · v${app.version}`,
+          },
+          { type: 'separator', key: 's0' },
+          {
             key: 'open',
             label: 'Open',
             icon: <AppWindow size={14} />,

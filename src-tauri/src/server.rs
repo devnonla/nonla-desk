@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use serde::Deserialize;
 use serde_json::{json, Value};
-use tauri::{AppHandle, Emitter};
+use tauri::AppHandle;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{UnixListener, UnixStream};
 
@@ -351,25 +351,16 @@ async fn dispatch(app: &AppHandle, cmd: &str, args: &Value) -> Result<Value, Str
 
         "market_add" => {
             let (source, name) = (req(args, "source")?, opt(args, "name"));
-            let v = blocking(move || market::add(&source, name.as_deref())).await?;
-            // The Nonla Desk page shows mini app updates.
-            let _ = app.emit("market:checked", ());
-            Ok(v)
+            blocking(move || market::add(&source, name.as_deref())).await
         }
         "market_list" => Ok(Value::Array(blocking(market::list_markets).await?)),
         "market_update" => {
             let name = opt(args, "name");
-            let v = blocking(move || market::update(name.as_deref())).await?;
-            // The Nonla Desk page shows mini app updates.
-            let _ = app.emit("market:checked", ());
-            Ok(v)
+            blocking(move || market::update(name.as_deref())).await
         }
         "market_remove" => {
             let name = req(args, "name")?;
-            let v = blocking(move || market::remove(&name)).await?;
-            // The Nonla Desk page shows mini app updates.
-            let _ = app.emit("market:checked", ());
-            Ok(v)
+            blocking(move || market::remove(&name)).await
         }
         "market_apps" => {
             let name = opt(args, "market");
@@ -377,10 +368,7 @@ async fn dispatch(app: &AppHandle, cmd: &str, args: &Value) -> Result<Value, Str
         }
         "market_outdated" => {
             let name = opt(args, "market");
-            let v = blocking(move || market::outdated(name.as_deref())).await?;
-            // The Nonla Desk page shows mini app updates.
-            let _ = app.emit("market:checked", ());
-            Ok(v)
+            blocking(move || market::outdated(name.as_deref())).await
         }
         "market_diff" => {
             let reference = req(args, "app")?;
