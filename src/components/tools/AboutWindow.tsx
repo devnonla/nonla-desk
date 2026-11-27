@@ -51,7 +51,7 @@ export default function AboutWindow() {
 
   return (
     <div className="h-full overflow-y-auto bg-card">
-      <div className="mx-auto max-w-130 px-8 py-8 flex flex-col gap-7">
+      <div className="mx-auto max-w-3xl px-8 py-8 flex flex-col gap-7">
         <header className="flex items-center gap-4">
           <AppLogo size={64} />
           <div className="flex flex-col gap-0.5 min-w-0">

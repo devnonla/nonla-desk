@@ -325,7 +325,7 @@ export default function ImportWindow() {
 
   return (
     <div className="h-full overflow-y-auto bg-card">
-      <div className="mx-auto max-w-130 px-8 py-8 flex flex-col gap-5">
+      <div className="mx-auto max-w-3xl px-8 py-8 flex flex-col gap-5">
         <header className="flex flex-col gap-1">
           <Title level={3}>Import a mini app</Title>
           <span className="text-[13px] text-(--color-mute)">

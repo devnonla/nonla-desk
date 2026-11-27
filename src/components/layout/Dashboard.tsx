@@ -198,17 +198,24 @@ export default function Dashboard({ apps, loading, loadApps }: DashboardProps) {
 
       <TopBar />
 
-      {/* Icons fill columns top to bottom, then wrap to the right. */}
+      {/* Mini apps fill columns from the left, top to bottom, then wrap to the right. */}
       <nav
         aria-label="Mini apps"
-        className="absolute inset-x-0 top-11 bottom-0 z-20 px-5 py-4 flex flex-col flex-wrap content-start items-start gap-x-1 gap-y-3 overflow-x-auto"
+        className="absolute left-0 right-36 top-11 bottom-0 z-20 px-5 py-4 flex flex-col flex-wrap content-start items-start gap-x-1 gap-y-3 overflow-x-auto"
+      >
+        {loading ? <span className="sr-only">Loading apps…</span> : apps.map(renderAppIcon)}
+      </nav>
+
+      {/* Nonla Desk itself on the right edge, like the disks on a Mac desktop. */}
+      <nav
+        aria-label="Nonla Desk"
+        className="absolute right-0 top-11 z-20 px-5 py-4 flex flex-col items-center gap-y-3"
       >
         <AboutIcon active={windows.some((w) => w.kind === 'about')} onOpen={() => open('about')} />
         <ImportIcon
           active={windows.some((w) => w.kind === 'import')}
           onOpen={() => open('import')}
         />
-        {loading ? <span className="sr-only">Loading apps…</span> : apps.map(renderAppIcon)}
       </nav>
 
       <DesktopCommandPalette
